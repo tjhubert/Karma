@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var DynamicSearch = React.createClass({
+var ListQuestions = React.createClass({
 
   // sets initial state
   getInitialState: function(){
@@ -16,22 +16,44 @@ var DynamicSearch = React.createClass({
 
   render: function() {
 
-    var countries = this.props.items;
-    var searchString = this.state.searchString.trim().toLowerCase();
+    var questions = this.props.items;
+    // var searchString = this.state.searchString.trim().toLowerCase();
 
-    // filter countries list by value from input box
-    if(searchString.length > 0){
-      countries = countries.filter(function(country){
-        return country.name.toLowerCase().match( searchString );
-      });
-    }
+    // // filter countries list by value from input box
+    // if(searchString.length > 0){
+    //   countries = countries.filter(function(country){
+    //     return country.name.toLowerCase().match( searchString );
+    //   });
+    // }
 
     return (
       <div>
-        <input type="text" value={this.state.searchString} onChange={this.handleChange} placeholder="Search!" />
-        <ul>
-          { countries.map(function(country){ return <li>{country.name} </li> }) }
-        </ul>
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Topic</th>
+              <th>Location</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            { questions.map(function(question) {
+              return (
+                      <tr>
+                        <td>{question.name}</td>
+                        <td>{question.topic}</td>
+                        <td>{question.location}</td>
+                        <td>
+                          <button className="btn btn-default">
+                            Claim
+                          </button>
+                        </td>
+                      </tr>
+                      )
+            })}
+          </tbody>
+        </table>
       </div>
     )
   }
@@ -39,17 +61,17 @@ var DynamicSearch = React.createClass({
 });
 
 // list of countries, defined with JavaScript object literals
-var countries = [
-  {"name": "Sweden"}, {"name": "China"}, {"name": "Peru"}, {"name": "Czech Republic"},
-  {"name": "Bolivia"}, {"name": "Latvia"}, {"name": "Samoa"}, {"name": "Armenia"},
-  {"name": "Greenland"}, {"name": "Cuba"}, {"name": "Western Sahara"}, {"name": "Ethiopia"},
-  {"name": "Malaysia"}, {"name": "Argentina"}, {"name": "Uganda"}, {"name": "Chile"},
-  {"name": "Aruba"}, {"name": "Japan"}, {"name": "Trinidad and Tobago"}, {"name": "Italy"},
-  {"name": "Cambodia"}, {"name": "Iceland"}, {"name": "Dominican Republic"}, {"name": "Turkey"},
-  {"name": "Spain"}, {"name": "Poland"}, {"name": "Haiti"}
+var questions = [
+  {"name": "A", "topic":"Data structure", "location":"ECEB"},
+  {"name": "A", "topic":"Data structure", "location":"ECEB"},
+  {"name": "A", "topic":"Data structure", "location":"ECEB"},
+  {"name": "A", "topic":"Data structure", "location":"ECEB"},
+  {"name": "A", "topic":"Data structure", "location":"ECEB"},
+  {"name": "A", "topic":"Data structure", "location":"ECEB"},
+  {"name": "A", "topic":"Data structure", "location":"ECEB"}
 ];
 
 React.render(
-  <DynamicSearch items={ countries } />,
+  <ListQuestions items={ questions } />,
   document.getElementById('main')
 );
