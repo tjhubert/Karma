@@ -1,4 +1,4 @@
-import os
+import os, json
 from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash
 from firebase import firebase
@@ -40,6 +40,7 @@ def login():
             return redirect(url_for('main'));
     return render_template('login.html');
 
+
 @app.route('/checkAuth', methods=['GET', 'POST'])
 def check_auth():
     user_name = request.form['inputUsername'] 
@@ -59,7 +60,6 @@ def check_auth():
             if not document:
                 return "Error Username"
                 # return json.dumps({'status':'ERROR', 'errorMessage':"Email ID doesn't exist! Try again!"})
-            # elif document["password"] == user_password:
             elif check_password_hash(document["password"], user_password):
                 session['logged_in'] = True;
                 session['username'] = user_name;
@@ -78,16 +78,7 @@ def add_user():
         user_name = request.form['inputFullName']
         user_email = request.form['inputEmail']
         user_password = request.form['inputPassword']
-        # user_type= request.form['inputType']
-        # user_accountNumber = request.form['inputAccountNumber']
-    # if(user_type == "organization"):
-    #     user_frequency = "N/A";
-    #     user_amount = "-1";
-    # else:
-    #     user_frequency = request.form['inputFrequency']
-    #     user_amount = request.form['inputAmount']
-    
-    # validate the received values  
+ 
     if not (user_username and user_name and user_email and user_password):
         # check username uniqueness
         return render_template('register.html')  
@@ -97,7 +88,6 @@ def add_user():
         firebase.put('/users', user_username, post)
         session['logged_in'] = True;
         session['username'] = user_username;
-        # session['cust_id'] = user_accountNumber;
         return "Registered"
     # return json.dumps({'status':'OK', 'redirect':url_for('main')})
     return "end of func";
