@@ -10,9 +10,11 @@
   </head>
   <body>
     <div class="container">
+      <a href="{{url_for('logout')}}" class="btn btn-default">Logout</a>
       <h1>Flask React</h1>
       <br>
       <div id="main"></div>
+
     </div>
     <!-- scripts -->
     <script src="{{ url_for('static', filename='bower_components/react/react.min.js') }}"></script>

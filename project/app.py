@@ -9,21 +9,35 @@ app = Flask(__name__)
 firebase = firebase.FirebaseApplication('https://karmadb.firebaseIO.com', None)
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+@app.route('/main')
+def main():
+	if 'logged_in' in session:	
+		print("in if")	
+		if session['logged_in'] :
+			print("render template main")
+			return render_template('main.html')
+        else:
+			return redirect(url_for('login'))
+	return redirect(url_for('login'))
 
-@app.route('/hello')
+@app.route('/')
 def hello():
-    return render_template('hello.html')
+	session['logged_in'] = False
+	return render_template('hello.html')
+
+@app.route('/logout')
+def logout():
+    session['logged_in'] = False
+    session.pop('username', None)
+    return redirect(url_for('login'))
 
 @app.route('/login')
 def login():
-    # if('logged_in' in session):
-    #     if(session['logged_in'] == False):
-    #         return render_template('login.html');
-    #     else:
-    #         return redirect(url_for('landing'));
+    if('logged_in' in session):
+        if(session['logged_in'] == False):
+            return render_template('login.html');
+        else:
+            return redirect(url_for('main'));
     return render_template('login.html');
 
 @app.route('/checkAuth', methods=['GET', 'POST'])
@@ -47,10 +61,11 @@ def check_auth():
                 # return json.dumps({'status':'ERROR', 'errorMessage':"Email ID doesn't exist! Try again!"})
             # elif document["password"] == user_password:
             elif check_password_hash(document["password"], user_password):
-                # session['logged_in'] = True;
-                # session['username'] = user_name;
+                session['logged_in'] = True;
+                session['username'] = user_name;
                 # session['cust_id'] = '56c66be6a73e492741507c4b'
-                return "OK"
+                print('logged_in' in session)
+                return redirect(url_for('main'))
                 #return json.dumps({'status':'OK', 'redirect':url_for('main')})
             else:
                 return "Error Credentials"
@@ -90,8 +105,6 @@ def add_user():
 @app.route('/register')
 def register():
     return render_template('register.html');
-
-
 
 if __name__ == '__main__':
 	app.secret_key=os.urandom(12)
