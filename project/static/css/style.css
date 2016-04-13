@@ -19,3 +19,7 @@ ul{
   margin-left: 20px;
   text-align: left;
 }
+
+td .button{
+  margin-bottom: 0 !important;
+}
