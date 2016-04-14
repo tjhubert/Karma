@@ -12,36 +12,11 @@
 
 <body>
     <div class="off-canvas-wrapper">
-            <div class="off-canvas-content" data-off-canvas-content="">
-                <div class="row">
-                    <div class="medium-6 medium-centered large-4 large-centered columns">
-                        <form action="{{ url_for('add_user') }}" method="post">
-                            <div class="row column log-in-form">
-                                <h4 class="text-center">Register</h4>
-                                <label>Username
-                                    <input type="text" placeholder="johndoe12" name="inputUserName" required />
-                                </label>
-                                <label>Full Name
-                                    <input type="text" placeholder="John Doe" name="inputFullName" required/>
-                                </label>
-                                <label>Email
-                                    <input type="text" placeholder="johndoe@example.com" name="inputEmail" required/>
-                                </label>
-                                <label>Password
-                                    <input type="password" placeholder="Password" name="inputPassword" required/>
-                                </label>
-                                
-                                <input type="submit" class="button expanded" value="Register" />
-                            </div>
-                                
-                            </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+        <div id="main" class="off-canvas-content" data-off-canvas-content="">
+            
         </div>
     </div>
+    <script src="{{ url_for('static', filename='bower_components/react/react.js') }}"></script>
     <script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
     <script src="https://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.js" type="text/javascript"></script>
 
@@ -49,9 +24,7 @@
         $(document).foundation();   
     </script>
 
-    <script type="text/javascript">
+    <script src="{{ url_for('static', filename='scripts/js/register.js') }}"></script>
 
-
-    </script>
 </body>
 </html>
