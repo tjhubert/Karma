@@ -2,7 +2,8 @@
 *.pyc
 .git
 
-venv
+venv/
+venv/.Python
 
 node_modules/
 npm-debug.log
