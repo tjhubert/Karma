@@ -26,7 +26,8 @@ def main():
 @app.route('/')
 def hello():
 	session['logged_in'] = False
-	return render_template('hello.html')
+	return redirect(url_for('login'))
+    # return render_template('hello.html')
 
 @app.route('/logout')
 def logout():
@@ -107,5 +108,6 @@ def register():
     return render_template('register.html');
 
 if __name__ == '__main__':
-	app.secret_key=os.urandom(12)
-	app.run(debug=True)
+    app.secret_key=os.urandom(12)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
