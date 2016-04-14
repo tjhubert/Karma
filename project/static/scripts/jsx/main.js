@@ -154,8 +154,8 @@ var ListQuestions = React.createClass({
           <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem }/>    
         </table>
         <form onSubmit={this.handleSubmit}>
-          <div class="row column log-in-form">
-              <h4 class="text-center">Post New Question</h4>
+          <div className="row column log-in-form">
+              <h4 className="text-center">Post New Question</h4>
               <label>Location
                   <input type="text" id="location" onChange={ this.onChange } value={ this.state.location } name="location" placeholder="Location"/>
               </label>

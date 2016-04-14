@@ -155,8 +155,8 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
           React.createElement(QuestionPost, {items:  this.state.items, claimItem:  this.claimItem, finishItem:  this.finishItem})
         ), 
         React.createElement("form", {onSubmit: this.handleSubmit}, 
-          React.createElement("div", {class: "row column log-in-form"}, 
-              React.createElement("h4", {class: "text-center"}, "Post New Question"), 
+          React.createElement("div", {className: "row column log-in-form"}, 
+              React.createElement("h4", {className: "text-center"}, "Post New Question"), 
               React.createElement("label", null, "Location", 
                   React.createElement("input", {type: "text", id: "location", onChange:  this.onChange, value:  this.state.location, name: "location", placeholder: "Location"})
               ), 
