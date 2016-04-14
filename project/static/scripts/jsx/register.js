@@ -92,9 +92,16 @@ var RegisterForm = React.createClass({
       .then((response) => {
         if (response.status === 200) {
           window.location = "/main";
-        } else {
+        }
+        else if (response.status == 499){
+          this.setState({errorUsername: true})
+          this.refs.inputUsername.getDOMNode().className = 'invalid'
+          console.log('hello')
+          this.refs.inputUsername.getDOMNode().value = ''
+        } 
+        else {
           // this.setState({error:'invalid'})
-          console.log(response.text());
+          // console.log(response.text());
         }
       })
       .catch((error) => {

@@ -52,18 +52,18 @@ def check_auth():
     user_password = request_body['inputPassword']   
 
     if request.method == 'POST':
-        print(user_name)
-        print(user_password)
+        # print(user_name)
+        # print(user_password)
         document = firebase.get('/users', user_name)
-        print(document)
+        # print(document)
         # validate the received values  
         if not (user_name and user_password):
-            print("empty fields") 
+            # print("empty fields") 
             js = json.dumps({'status':'ERROR', 'errorMessage':'Enter all fields!'})
             return Response(js, status=500, mimetype='application/json')
         else:
             document = firebase.get('/users', user_name)
-            print(document)
+            # print(document)
             if not document:
                 js = json.dumps({'status':'ERROR', 'errorMessage':"Email ID doesn't exist! Try again!"})
                 return Response(js, status=500, mimetype='application/json')
@@ -71,7 +71,7 @@ def check_auth():
                 session['logged_in'] = True;
                 session['username'] = user_name;
                 # session['cust_id'] = '56c66be6a73e492741507c4b'
-                print('logged_in' in session)
+                # print('logged_in' in session)
                 # return redirect(url_for('main'))
                 js = json.dumps({'status':'OK'})
                 return Response(js, status=200, mimetype='application/json')
@@ -89,9 +89,16 @@ def add_user():
         user_name = request_body['inputFullName']
         user_email = request_body['inputEmail']
         user_password = request_body['inputPassword']
- 
-    if not (user_username and user_name and user_email and user_password):
+    
+    document = firebase.get('/users', user_name)
+    # print(document)
+    if document:
+        js = json.dumps({'status':'ERROR', 'errorMessage':"username taken"})
+        return Response(js, status=499, mimetype='application/json')
+
+    if not (not document and user_username and user_name and user_email and user_password):
         # check username uniqueness
+
         js = json.dumps({'status':'ERROR', 'errorMessage':"incomplete credentials for registration"})
         return Response(js, status=500, mimetype='application/json')
     else:
@@ -110,4 +117,4 @@ def register():
 if __name__ == '__main__':
     app.secret_key=os.urandom(12)
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True,host='0.0.0.0', port=port)
