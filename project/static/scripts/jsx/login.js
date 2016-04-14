@@ -1,10 +1,9 @@
-/** @jsx React.DOM */
-
 var LoginForm = React.createClass({
 
   // sets initial state
   getInitialState: function(){
-    return { searchString: '' };
+    return { searchString: '',
+            error: 'test' };
   },
 
   // sets state, triggers render method
@@ -16,7 +15,9 @@ var LoginForm = React.createClass({
 
   componentDidMount: function() {
   },
-
+  cleanCSS:function(){
+    this.setState({error:''})
+  },
   tryLogIn: function(e) {
 
     e.preventDefault();
@@ -35,7 +36,7 @@ var LoginForm = React.createClass({
       if (response.status === 200) {
         window.location = "/main";
       } else {
-        console.log(response.text());
+        this.setState({error:'invalid'});
       }
     })
     .catch((error) => {
@@ -47,18 +48,20 @@ var LoginForm = React.createClass({
 
     return (
       <div className="row">
+
           <div id="login" className="medium-6 medium-centered large-4 large-centered columns">
               <form data-abide noValidate id="log-in-form">
                   <div>
                       <h3 id="login_header" className="text-center">Karma</h3>
                       <label>Username
-                          <input type="text" placeholder="Username" ref="inputUsername" required />
+                          <input onChange={this.cleanCSS} className={this.state.error} type="text" placeholder="Username" ref="inputUsername" required />
+                          
                       </label>
                       <label>Password
-                          <input type="password" placeholder="Password" ref="inputPassword" pattern="password" required />
+                          <input onChange={this.cleanCSS} className={this.state.error} type="password" placeholder="Password" ref="inputPassword" pattern="password" required />
                       </label>
                       <input onClick={this.tryLogIn} type="submit" className="button expanded" id="log-in-button" value="Log In" />
-                      <p className="text-center"><a href="/register">Register</a></p>
+                      <a className="button expanded success" href="/register">Register</a>
                   </div>
               </form>
           </div>
