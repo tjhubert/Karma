@@ -127,7 +127,7 @@ var ListQuestions = React.createClass({
     }
   },
 
-  initAutocompleteAndGeolocate: function() {
+  initAutocomplete: function() {
     // Create the autocomplete object, restricting the search to geographical
     // location types.
 
@@ -174,6 +174,8 @@ var ListQuestions = React.createClass({
       radius: 0
     });
 
+    this.geolocate();
+
     this.geoQuery.on("key_entered", function(itemKey) {
       itemKey = itemKey.split(":")[1];
       firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
@@ -196,7 +198,7 @@ var ListQuestions = React.createClass({
   },
 
   componentDidMount: function() { 
-    this.initAutocompleteAndGeolocate();
+    this.initAutocomplete();
   },
   
   onChange: function(e) {
