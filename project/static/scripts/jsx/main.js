@@ -69,6 +69,7 @@ var QuestionPost = React.createClass({
       return (
         <tr key={ key }>
           <td>{item.location}</td>
+          <td>{item.room}</td>
           <td>{item.topic}</td>
           <td>{item.description}</td>
           <td><StatusAlert status={item.status}/></td>
@@ -270,7 +271,6 @@ var ListQuestions = React.createClass({
         room: this.state.room
 
       });
-      console.log(this.state.geolocation);
       this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
       this.setState({
         // text: '',
@@ -291,6 +291,7 @@ var ListQuestions = React.createClass({
         <table className="table table-striped">
           <thead>
             <th>Location</th>
+            <th>Room</th>
             <th>Topic</th>
             <th>Description</th>
             <th>Status</th>
