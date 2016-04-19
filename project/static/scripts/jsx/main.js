@@ -59,7 +59,6 @@ var QuestionPost = React.createClass({
   render: function(props) {
     var _this = this;
     var createItem = function(item, index) {
-      console.log(_this.props.statusFilter)
       if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
         return (
           <tr key={ index }>
@@ -104,7 +103,6 @@ var ListQuestions = React.createClass({
       limit_auth = dataSnapshot.child('limit').val();
       that.setState({user_email:user_email_auth})
       that.setState({user_limit:limit_auth})
-      console.log(limit_auth)
     })
 
     return { 
@@ -121,7 +119,6 @@ var ListQuestions = React.createClass({
   
   componentWillMount: function() {
     var firebaseRef = new Firebase('https://karmadb.firebaseio.com/items/');
-    console.log('https://karmadb.firebaseio.com/user/'+this.state.user_uid)
     var firebaseRef_user = new Firebase('https://karmadb.firebaseio.com/user/'+this.state.user_uid);
     this.bindAsObject(firebaseRef_user, 'my_user')
     this.setState({user_limit: this.state.my_user.limit})
@@ -139,7 +136,6 @@ var ListQuestions = React.createClass({
     firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
       author_uid = dataSnapshot.child('author_uid').val();
       email = dataSnapshot.child('author_email').val();
-      console.log(email)
     })
 
     firebaseRef.child('items').child(key).update({status: 'In Progress'});
@@ -155,7 +151,6 @@ var ListQuestions = React.createClass({
     })
     firebaseRef.child('user').child(author_uid).once("value", function(dataSnapshot) {
       curr_limit = dataSnapshot.child('limit').val();
-      console.log('curr' + curr_limit)
     })
     // curr_limit += 1
     firebaseRef.child('items').child(key).update({status: 'Finished'});

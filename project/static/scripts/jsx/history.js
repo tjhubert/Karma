@@ -59,7 +59,6 @@ var QuestionPost = React.createClass({
   render: function(props) {
     var _this = this;
     var createItem = function(item, index) {
-      console.log(_this.props.statusFilter)
       if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
         return (
           <tr key={ index }>
@@ -99,7 +98,6 @@ var ListQuestions = React.createClass({
     firebaseref.child(user_uid).once("value", function(dataSnapshot) {
       user_email_auth = dataSnapshot.child('email').val();
       that.setState({user_email:user_email_auth})
-      console.log(user_email_auth)
     })
 
     return { 
@@ -129,7 +127,6 @@ var ListQuestions = React.createClass({
     firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
       author_uid = dataSnapshot.child('author_uid').val();
       email = dataSnapshot.child('author_email').val();
-      console.log(email)
     })
 
     firebaseRef.child('items').child(key).update({status: 'In Progress'});
@@ -142,7 +139,6 @@ var ListQuestions = React.createClass({
     firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
       author_uid = dataSnapshot.child('author_uid').val();
       email = dataSnapshot.child('author_email').val();
-      console.log(email)
     })
 
     firebaseRef.child('items').child(key).update({status: 'Finished'});
@@ -205,7 +201,7 @@ var ListQuestions = React.createClass({
             <th>Location</th>
             <th>Topic</th>
             <th>Description</th>
-            <th>Status</th>
+            <th>Status</th> 
           </thead>
           <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem } statusFilter={this.state.status_filter}/>    
         </table>
