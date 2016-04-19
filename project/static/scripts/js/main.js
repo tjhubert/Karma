@@ -128,7 +128,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     }
   },
 
-  initAutocomplete: function() {
+  initAutocompleteAndGeolocate: function() {
     // Create the autocomplete object, restricting the search to geographical
     // location types.
 
@@ -194,6 +194,10 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       delete newItems[itemKey];
       that.setState({items: newItems});
     });
+  },
+
+  componentDidMount: function() { 
+    this.initAutocompleteAndGeolocate();
   },
   
   onChange: function(e) {
