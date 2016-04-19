@@ -66,19 +66,20 @@ var QuestionPost = React.createClass({
     }
 
     var createItem = function(item, key) {
-
-      return (
-        <tr key={ key }>
-          <td>{item.address}</td>
-          <td>{item.room}</td>
-          <td>{item.topic}</td>
-          <td>{item.description}</td>
-          <td><StatusAlert status={item.status}/></td>
-          <td>
-            <ActionComponent status={item.status} claimItem={ _this.props.claimItem.bind(null, key) } finishItem = { _this.props.finishItem.bind(null, key) } />
-          </td>
-        </tr>
-      );
+      if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
+        return (
+          <tr key={ key }>
+            <td>{item.address}</td>
+            <td>{item.room}</td>
+            <td>{item.topic}</td>
+            <td>{item.description}</td>
+            <td><StatusAlert status={item.status}/></td>
+            <td>
+              <ActionComponent status={item.status} claimItem={ _this.props.claimItem.bind(null, key) } finishItem = { _this.props.finishItem.bind(null, key) } />
+            </td>
+          </tr>
+        );
+      }
     };
     return <tbody>{ mapObject(this.props.items, createItem) }</tbody>;
   }

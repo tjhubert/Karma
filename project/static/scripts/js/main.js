@@ -67,19 +67,20 @@ var QuestionPost = React.createClass({displayName: "QuestionPost",
     }
 
     var createItem = function(item, key) {
-
-      return (
-        React.createElement("tr", {key:  key }, 
-          React.createElement("td", null, item.address), 
-          React.createElement("td", null, item.room), 
-          React.createElement("td", null, item.topic), 
-          React.createElement("td", null, item.description), 
-          React.createElement("td", null, React.createElement(StatusAlert, {status: item.status})), 
-          React.createElement("td", null, 
-            React.createElement(ActionComponent, {status: item.status, claimItem:  _this.props.claimItem.bind(null, key), finishItem:  _this.props.finishItem.bind(null, key) })
+      if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
+        return (
+          React.createElement("tr", {key:  key }, 
+            React.createElement("td", null, item.address), 
+            React.createElement("td", null, item.room), 
+            React.createElement("td", null, item.topic), 
+            React.createElement("td", null, item.description), 
+            React.createElement("td", null, React.createElement(StatusAlert, {status: item.status})), 
+            React.createElement("td", null, 
+              React.createElement(ActionComponent, {status: item.status, claimItem:  _this.props.claimItem.bind(null, key), finishItem:  _this.props.finishItem.bind(null, key) })
+            )
           )
-        )
-      );
+        );
+      }
     };
     return React.createElement("tbody", null,  mapObject(this.props.items, createItem) );
   }
