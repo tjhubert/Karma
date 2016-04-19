@@ -32,21 +32,21 @@ var ActionComponent = React.createClass({displayName: "ActionComponent",
     if (status == "Unclaimed"){
       text = "Claim"
       func = this.props.claimItem
-      label = "button alert tiny";
+      label = "button alert small";
     }
     else if (status == "Finished"){
       func = ""
       text = "None"
-      label = "button secondary tiny disabled";
+      label = "button secondary small disabled";
     }
     else if (status == "In Progress"){
       text = "Finish"
       func = this.props.finishItem
-      label = "button success tiny"
+      label = "button success small"
     }
     else{
       text = "Error"
-      label = "secondary button disabled tiny"
+      label = "secondary button disabled small"
     }
     return (
         React.createElement("span", {onClick: func, className: label}, text)
@@ -305,21 +305,20 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         React.createElement("form", {onSubmit: this.handleSubmit}, 
           React.createElement("div", {className: "row column log-in-form"}, 
               React.createElement("h4", {className: "text-center"}, "Post New Question"), 
-
+              React.createElement("label", null, "Type in your address/building name", 
+              React.createElement("div", {className: "input-group"}, 
+                React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
+                  React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "autocomplete", onChange:  this.onChange, value:  this.state.address, name: "address", placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
+              ), 
               React.createElement("div", null, 
-                "Pick from these popular places: ", 
+                "or pick from these popular places: ", 
                 this.props.savedPlaces.map(function(item, i) {
                   return (
                       React.createElement("button", {className: "button hollow small default", onClick:  this.handleClickPlace.bind(null, item) }, item.name)
                   );
                 }.bind(this))
-              ), 
-              React.createElement("label", null, "or type in your address/building name", 
-              React.createElement("div", {className: "input-group"}, 
-                React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
-                  React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "autocomplete", onChange:  this.onChange, value:  this.state.address, name: "address", placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
               )
-              
+
               ), 
               React.createElement("label", null, "Room/area", 
                   React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "1234"})

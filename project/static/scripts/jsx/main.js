@@ -31,21 +31,21 @@ var ActionComponent = React.createClass({
     if (status == "Unclaimed"){
       text = "Claim"
       func = this.props.claimItem
-      label = "button alert tiny";
+      label = "button alert small";
     }
     else if (status == "Finished"){
       func = ""
       text = "None"
-      label = "button secondary tiny disabled";
+      label = "button secondary small disabled";
     }
     else if (status == "In Progress"){
       text = "Finish"
       func = this.props.finishItem
-      label = "button success tiny"
+      label = "button success small"
     }
     else{
       text = "Error"
-      label = "secondary button disabled tiny"
+      label = "secondary button disabled small"
     }
     return (
         <span onClick={func} className={label}>{text}</span>
@@ -304,21 +304,20 @@ var ListQuestions = React.createClass({
         <form onSubmit={this.handleSubmit}>
           <div className="row column log-in-form">
               <h4 className="text-center">Post New Question</h4>
-
+              <label>Type in your address/building name
+              <div className="input-group">
+                <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
+                  <input className="input-group-field" type="text" id="building" ref="autocomplete" onChange={ this.onChange }  value={ this.state.address } name="address" placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
+              </div>
               <div>
-                Pick from these popular places:&nbsp;
+                or pick from these popular places:&nbsp;
                 {this.props.savedPlaces.map(function(item, i) {
                   return (
                       <button className="button hollow small default" onClick={ this.handleClickPlace.bind(null, item) } >{item.name}</button>
                   );
                 }.bind(this))}
               </div>
-              <label>or type in your address/building name
-              <div className="input-group">
-                <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
-                  <input className="input-group-field" type="text" id="building" ref="autocomplete" onChange={ this.onChange }  value={ this.state.address } name="address" placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
-              </div>
-              
+
               </label>
               <label>Room/area
                   <input type="text" id="room" onChange={ this.onChange } value={ this.state.room } name="room" placeholder="1234"/>
