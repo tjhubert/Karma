@@ -264,7 +264,6 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         room: this.state.room
 
       });
-      console.log(this.state.geolocation);
       this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
       this.setState({
         // text: '',
