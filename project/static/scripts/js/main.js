@@ -6,16 +6,16 @@ var StatusAlert = React.createClass({displayName: "StatusAlert",
     var status = this.props.status;
     var label;
     if (status == "Unclaimed"){
-      label = "alert label";
+      label = "status-alert";
     }
     else if (status == "Finished"){
-      label = "success label";
+      label = "status-success";
     }
     else if (status == "In Progress"){
-      label = "warning label";
+      label = "status-warning";
     }
     else{
-      label = "secondary label"
+      label = "status-secondary"
     }
     return (
         React.createElement("span", {className: label}, " ", status, " ")
@@ -69,7 +69,7 @@ var QuestionPost = React.createClass({displayName: "QuestionPost",
 
       return (
         React.createElement("tr", {key:  key }, 
-          React.createElement("td", null, item.location), 
+          React.createElement("td", null, item.address), 
           React.createElement("td", null, item.room), 
           React.createElement("td", null, item.topic), 
           React.createElement("td", null, item.description), 
@@ -92,7 +92,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   getInitialState: function(){
     return { 
       items:{},
-      location: '',
+      address: '',
       topic: '',
       description: '',
       status: 'Unclaimed',
@@ -122,11 +122,15 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     autocomplete.addListener('place_changed', function() {
       var place = autocomplete.getPlace();
       that.setState({
-        location: place.formatted_address,
+        address: place.formatted_address,
         geolocation: {
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng()
         }
+      });
+      that.geoQuery.updateCriteria({
+        center: [place.geometry.location.lat(), place.geometry.location.lng()],
+        radius: 1
       });
     });
   },
@@ -145,26 +149,25 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
     this.geolocate();
 
-    this.geoQuery.on("key_entered", function(itemKey, location) {
+    this.geoQuery.on("key_entered", function(itemKey) {
       itemKey = itemKey.split(":")[1];
-      firebaseRef.child("items").child(itemKey).once("value", function(dataSnapshot) {
+      firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
         var question = dataSnapshot.val();
         var newItems = that.state.items;
         newItems[itemKey] = question;
         if (question !== null) {
-          // Add the vehicle to the list of vehicles in the query
           that.setState({items: newItems})
         }
       })
     });
 
-    this.geoQuery.on("key_exited", function(itemKey, location) {
+    this.geoQuery.on("key_exited", function(itemKey) {
       itemKey = itemKey.split(":")[1];
+      firebaseRef.child("items").child(itemKey).off("value");
       var newItems = that.state.items;
       delete newItems[itemKey];
       that.setState({items: newItems});
     });
-    // this.bindAsArray(firebaseRef.child("items").limitToLast(25), 'items');
   },
 
   componentDidMount: function() {
@@ -173,7 +176,6 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
 
   onChange: function(e) {
-    // this.setState({text: e.target.value});
     this.setState({ [e.target.name]: e.target.value });
   },
 
@@ -207,7 +209,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     var that = this;
 
     this.setState({disabledAutocomplete: true});
-    this.setState({location: "Finding your location..."});
+    this.setState({address: "Finding your location..."});
 
     var mainMethod = function() {
       var geocoder = new google.maps.Geocoder();
@@ -216,7 +218,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         that.setState({disabledAutocomplete: false});
         if (status == google.maps.GeocoderStatus.OK) {
           if (results[0]) {
-            that.setState({location:results[0].formatted_address});
+            that.setState({address:results[0].formatted_address});
           }
         } else {
             console.log("fail geocoding: " + status);
@@ -237,38 +239,46 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   claimItem: function(key) {
     var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
     firebaseRef.child("items").child(key).update({status: 'In Progress'});
-    var geo = this.state.items[key].geolocation;
-    firebaseRef.child("_geoFire").child("items:"+key).remove();
-    this.geoFire.set("items:" + key, [geo.lat, geo.lng]);
   },
 
   finishItem: function(key) {
     var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
     firebaseRef.child("items").child(key).update({status: 'Finished'});
-    var geo = this.state.items[key].geolocation;
-    firebaseRef.child("_geoFire").child("items:"+key).remove();
-    this.geoFire.set("items:" + key, [geo.lat, geo.lng]);
+  },
+
+  handleClickPlace: function(place, e) {
+    e.preventDefault();
+
+    this.setState({
+      address: place.address,
+      geolocation: place.geolocation
+    });
+    this.geoQuery.updateCriteria({
+      center: [place.geolocation.lat, place.geolocation.lng],
+      radius: 1
+    });
   },
 
   handleSubmit: function(e) {
     e.preventDefault();
-    if (this.state.location && this.state.location.trim().length !== 0) {
+    console.log(e);
+    if (this.state.address && this.state.address.trim().length !== 0) {
     var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
 
       var id = firebaseRef.child('items').push({
-        // text: this.state.text,
-        location: this.state.location,
+        address: this.state.address,
         topic: this.state.topic,
         status: 'Unclaimed',
         description: this.state.description,
         geolocation: this.state.geolocation,
         room: this.state.room
-
       });
+
       this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
+
       this.setState({
         // text: '',
-        location: '',
+        address: '',
         topic: '',
         status: 'Unclaimed',
         description: '',
@@ -284,7 +294,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       React.createElement("div", null, 
         React.createElement("table", {className: "table table-striped"}, 
           React.createElement("thead", null, 
-            React.createElement("th", null, "Location"), 
+            React.createElement("th", null, "Address"), 
             React.createElement("th", null, "Room"), 
             React.createElement("th", null, "Topic"), 
             React.createElement("th", null, "Description"), 
@@ -299,8 +309,19 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
               React.createElement("label", null, "Building/address", 
               React.createElement("div", {className: "input-group"}, 
                 React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
-                  React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "autocomplete", onChange:  this.onChange, value:  this.state.location, name: "location", placeholder: "Location", disabled: this.state.disabledAutocomplete})
+                  React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "autocomplete", onChange:  this.onChange, value:  this.state.address, name: "address", placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
+              ), 
+
+              React.createElement("div", null, 
+                "Or pick from these popular places: ", 
+                this.props.savedPlaces.map(function(item, i) {
+                  return (
+                      React.createElement("button", {className: "button hollow small default", onClick:  this.handleClickPlace.bind(null, item) }, item.name)
+                  );
+                }.bind(this))
               )
+
+
               ), 
               React.createElement("label", null, "Room/area", 
                   React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "1234"})
@@ -311,7 +332,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
               React.createElement("label", null, "Description", 
                   React.createElement("input", {type: "text", id: "description", onChange:  this.onChange, value:  this.state.description, name: "description", placeholder: "Brief description"})
               ), 
-              React.createElement("input", {type: "submit", className: "button expanded", value: "Submit"})
+              React.createElement("input", {type: "submit", className: "button success expanded", value: "Submit"})
           )
         )
       )
@@ -320,8 +341,35 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
 });
 
+var savedPlaces = [
+  {
+    name: "Siebel",
+    address: "Thomas M. Siebel Center for Computer Science, 201 N Goodwin Ave, Urbana, IL 61801, USA",
+    geolocation: {
+      lat: 40.11402580000001,
+      lng: -88.22480730000001
+    } 
+  },
+  {
+    name: "ECEB",
+    address: "Electrical and Computer Engineering Building, 306 N Wright St, Urbana, IL 61801, USA",
+    geolocation: {
+      lat: 40.114918,
+      lng: -88.22825309999996
+    }
+  },
+  {
+    name: "Grainger",
+    address: "1301 W Springfield Ave, Urbana, IL 61801, USA",
+    geolocation : {
+      lat: 40.1123977,
+      lng: -88.22727479999998
+    }
+  }
+];
+
 React.render(
-  React.createElement(ListQuestions, null),
+  React.createElement(ListQuestions, {savedPlaces: savedPlaces}),
   document.getElementById('main')
 );
 
