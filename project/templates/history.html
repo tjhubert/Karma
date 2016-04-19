@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head lang="en">
+    <meta charset="UTF-8">
+    <title>Flask React</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- styles -->
+
+    <link rel="stylesheet" href="https://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.min.css" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css" rel="stylesheet" type="text/css" />
+
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://fb.me/react-0.14.7.min.js"></script>
+    <script src="https://fb.me/react-dom-0.14.7.min.js"></script>
+    
+    <script src="https://cdn.firebase.com/js/client/2.4.0/firebase.js"></script>
+
+    <script src="https://cdn.firebase.com/libs/reactfire/0.6.0/reactfire.min.js"></script>
+    <!-- GeoFire -->
+    <script src="https://cdn.firebase.com/libs/geofire/4.0.0/geofire.min.js"></script>
+
+  </head>
+  <body>
+    <div id='logout' class="row text-center">
+      
+    </div>
+    <div class="row text-center">
+      <h3 class="text-center">Welcome to Karma!</h3>
+      <div class="medium-8 medium-centered large-6 large-centered columns">
+        
+        <div id="main"></div>
+      </div>
+    </div>
+    <!-- scripts -->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+    <script src="https://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.js" type="text/javascript"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyABTZAPeqCf7OXs_jYx9FQHs0PShOGGeko&libraries=places"></script>
+    <!-- <script src="{{ url_for('static', filename='bower_components/react/react.min.js') }}"></script> -->
+    <!-- <script src="{{ url_for('static', filename='bower_components/jquery/dist/jquery.min.js') }}"></script> -->
+    <!-- <script src="{{ url_for('static', filename='bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='scripts/js/history.js') }}"></script>
+    <script type='text/javascript'>
+      $()
+
+    </script>
+  </body>
+</html>

@@ -19,29 +19,43 @@ var LoginForm = React.createClass({
     this.setState({error:''})
   },
   tryLogIn: function(e) {
-
     e.preventDefault();
-    fetch('/checkAuth', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputUsername: this.refs.inputUsername.getDOMNode().value,
-        inputPassword: this.refs.inputPassword.getDOMNode().value,
-      })
-    })
-    .then((response) => {
-      if (response.status === 200) {
-        window.location = "/main";
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+
+    ref.authWithPassword({
+        email    : this.refs.inputUsername.getDOMNode().value,
+        password : this.refs.inputPassword.getDOMNode().value
+      }, function(error, authData) {
+      if (error) {
+        console.log("Login Failed!", error);
       } else {
-        this.setState({error:'invalid'});
+        window.location = "/main";
+        console.log("Authenticated successfully with payload:", authData);
       }
-    })
-    .catch((error) => {
-      console.warn(error);
     });
+
+    // e.preventDefault();
+    // fetch('/checkAuth', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Accept': 'application/json',
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     inputUsername: this.refs.inputUsername.getDOMNode().value,
+    //     inputPassword: this.refs.inputPassword.getDOMNode().value,
+    //   })
+    // })
+    // .then((response) => {
+    //   if (response.status === 200) {
+    //     window.location = "/main";
+    //   } else {
+    //     this.setState({error:'invalid'});
+    //   }
+    // })
+    // .catch((error) => {
+    //   console.warn(error);
+    // });
   },
 
   render: function() {
