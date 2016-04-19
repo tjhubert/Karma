@@ -4,13 +4,30 @@ from flask import Flask, request, session, g, redirect, url_for, \
 from firebase import firebase
 from werkzeug import generate_password_hash, check_password_hash
 
-app = Flask(__name__)
 
+# import redis
+# from flask import Flask
+# from flask_kvsession import KVSessionExtension
+# from simplekv.memory.redisstore import RedisStore
+
+# store = RedisStore(redis.StrictRedis())
+
+# app = Flask(__name__)
+# KVSessionExtension(store, app)
+
+app = Flask(__name__)
+app.secret_key = 'F12Zr47j\3yX R~X@H!jmM]Lwf/,?KT'
 firebase = firebase.FirebaseApplication('https://karmadb.firebaseIO.com', None)
+
+@app.route('/history')
+def history():
+    return render_template('history.html')
+
 
 
 @app.route('/main')
 def main():
+    print('main', session)
     return render_template('main.html')
 
  #    if 'logged_in' in session:	
@@ -70,16 +87,15 @@ def check_auth():
             elif check_password_hash(document["password"], user_password):
                 session['logged_in'] = True;
                 session['username'] = user_name;
-                # session['cust_id'] = '56c66be6a73e492741507c4b'
-                # print('logged_in' in session)
-                # return redirect(url_for('main'))
+                session.modified = True;
+                # print(session_id)
                 js = json.dumps({'status':'OK'})
+                print('auth', session)
                 return Response(js, status=200, mimetype='application/json')
                 #return json.dumps({'status':'OK', 'redirect':url_for('main')})
             else:
                 js = json.dumps({'status':'ERROR', 'errorMessage':'Error credentials'})
                 return Response(js, status=500, mimetype='application/json')
-
 
 @app.route('/addUser', methods=['GET', 'POST'])
 def add_user():
@@ -115,6 +131,8 @@ def register():
     return render_template('register.html');
 
 if __name__ == '__main__':
-    app.secret_key=os.urandom(12)
+    # session.modified = True
+    # app.secret_key='AAAAAAbbbbccc'
+    #os.urandom(12)
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True,host='0.0.0.0', port=port)

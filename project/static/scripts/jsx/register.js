@@ -96,7 +96,6 @@ var RegisterForm = React.createClass({
         else if (response.status == 499){
           this.setState({errorUsername: true})
           this.refs.inputUsername.getDOMNode().className = 'invalid'
-          console.log('hello')
           this.refs.inputUsername.getDOMNode().value = ''
         } 
         else {

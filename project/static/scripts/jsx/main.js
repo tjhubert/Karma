@@ -22,6 +22,7 @@ var StatusAlert = React.createClass({
   }
 });
 
+
 var ActionComponent = React.createClass({
   render: function(props) {
     var status = this.props.status;
@@ -89,7 +90,31 @@ var ListQuestions = React.createClass({
 
   // sets initial state
   getInitialState: function(){
+    var that = this
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+    var user_uid;
+    ref.onAuth(function(authData) {
+      if (authData) {
+        user_uid = authData.uid
+        console.log("Authenticated with uid:", authData.uid);
+      } else {
+        window.location = '/login'
+        console.log("Client unauthenticated.")
+      }
+    });
+
+    var userFirebaseRef = new Firebase("https://karmadb.firebaseio.com/user");
+    userFirebaseRef.child(user_uid).once("value", function(dataSnapshot) {
+      user_email_auth = dataSnapshot.child('email').val();
+      limit_auth = dataSnapshot.child('limit').val();
+      that.setState({user_email:user_email_auth})
+      that.setState({user_limit:limit_auth})
+    });
+
     return { 
+      user_uid: user_uid,
+      status_filter: 'all',
+      my_user: '',
       items:{},
       address: '',
       topic: '',
@@ -98,11 +123,11 @@ var ListQuestions = React.createClass({
       geolocation: {},
       room: '',
       disabledAutocomplete: false,
-      currentGeolocation: {},
-    };
+      currentGeolocation: {}
+    }
   },
 
-  initAutocomplete: function() {
+  initAutocompleteAndGeolocate: function() {
     // Create the autocomplete object, restricting the search to geographical
     // location types.
 
@@ -140,13 +165,14 @@ var ListQuestions = React.createClass({
     this.geoFire = new GeoFire(firebaseRef.child("_geoFire"));
     var that = this;
 
+    var firebaseRef_user = new Firebase('https://karmadb.firebaseio.com/user/'+this.state.user_uid);
+    this.bindAsObject(firebaseRef_user, 'my_user')
+    this.setState({user_limit: this.state.my_user.limit})
 
     this.geoQuery = this.geoFire.query({
       center: [40.110942, -88.21117400000003],
       radius: 0
     });
-
-    this.geolocate();
 
     this.geoQuery.on("key_entered", function(itemKey) {
       itemKey = itemKey.split(":")[1];
@@ -169,13 +195,43 @@ var ListQuestions = React.createClass({
     });
   },
 
-  componentDidMount: function() {
-    this.initAutocomplete();
+  componentDidMount: function() { 
+    this.initAutocompleteAndGeolocate();
   },
-
-
+  
   onChange: function(e) {
     this.setState({ [e.target.name]: e.target.value });
+  },
+
+  claimItem: function(key) {
+    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/');
+    var author_uid;
+    firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
+      author_uid = dataSnapshot.child('author_uid').val();
+      email = dataSnapshot.child('author_email').val();
+    })
+
+    firebaseRef.child('items').child(key).update({status: 'In Progress'});
+    firebaseRef.child('user').child(author_uid).child('post').child(key).update({status: 'In Progress'});
+  },
+
+  finishItem: function(key) {
+    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/');
+    var author_uid;
+    var curr_limit;
+    firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
+      author_uid = dataSnapshot.child('author_uid').val();
+    })
+    firebaseRef.child('user').child(author_uid).once("value", function(dataSnapshot) {
+      curr_limit = dataSnapshot.child('limit').val();
+    })
+    // curr_limit += 1
+    firebaseRef.child('items').child(key).update({status: 'Finished'});
+    firebaseRef.child('user').child(author_uid).child('post').child(key).update({status: 'Finished'});
+    // firebaseRef.child('user').child(author_uid).update({limit: curr_limit});
+    firebaseRef.child('user').child(author_uid).child('limit').transaction(function(current_value){
+      return (current_value || 0) + 1
+    });
   },
 
   geolocate: function(callback) {
@@ -234,17 +290,6 @@ var ListQuestions = React.createClass({
     }
   },
 
-
-  claimItem: function(key) {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
-    firebaseRef.child("items").child(key).update({status: 'In Progress'});
-  },
-
-  finishItem: function(key) {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
-    firebaseRef.child("items").child(key).update({status: 'Finished'});
-  },
-
   handleClickPlace: function(place, e) {
     e.preventDefault();
 
@@ -260,8 +305,13 @@ var ListQuestions = React.createClass({
 
   handleSubmit: function(e) {
     e.preventDefault();
-    if (this.state.address && this.state.address.trim().length !== 0) {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
+
+    if (this.state.my_user.limit > 0 && this.state.address && this.state.address.trim().length !== 0) {
+      var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
+      var userFirebaseRef = new Firebase('https://karmadb.firebaseio.com/user/');
+      userFirebaseRef.child(this.state.user_uid).child('limit').transaction(function(current_value){
+        return (current_value || 0) - 1
+      });
 
       var id = firebaseRef.child('items').push({
         address: this.state.address,
@@ -269,27 +319,55 @@ var ListQuestions = React.createClass({
         status: 'Unclaimed',
         description: this.state.description,
         geolocation: this.state.geolocation,
-        room: this.state.room
+        room: this.state.room,
+        author_uid: this.state.user_uid,
+        author_email: this.state.user_email,
+        author_limit: this.state.my_user.limit
       });
 
       this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
 
+      userFirebaseRef.child(this.state.user_uid).child('post').child(id.key()).set({
+        address: this.state.address,
+        room: this.state.room,
+        topic: this.state.topic,
+        status: 'Unclaimed',
+        description: this.state.description
+      });
+
       this.setState({
-        // text: '',
         address: '',
         topic: '',
         status: 'Unclaimed',
-        description: '',
-        geolocation: {},
-        room: ''
+        description: ''
       });
     }
+    else{
+        alert('Please wait for your questions to be answered.')
+    }
   },
-
+  statusfilterF: function(e){
+    this.setState({status_filter:'Finished'})
+  },
+  statusfilterU: function(e){
+    this.setState({status_filter:'Unclaimed'})
+  },
+  statusfilterIP: function(e){
+    this.setState({status_filter:'In Progress'})
+  },
+  statusfilterA: function(e){
+    this.setState({status_filter:'all'})
+  },
   render: function() {
 
     return (
       <div>
+      <p>Registered as: {this.state.user_email}</p>
+      <p>Post limit: {this.state.my_user.limit}</p>
+      <a className="button" onClick={this.statusfilterF}>Finished</a>
+      <a className="button" onClick={this.statusfilterU}>Unclaimed</a>
+      <a className="button" onClick={this.statusfilterIP}>In Progress</a>
+      <a className="button" onClick={this.statusfilterA}>ALL</a>
         <table className="table table-striped">
           <thead>
             <th>Address</th>
@@ -299,7 +377,7 @@ var ListQuestions = React.createClass({
             <th>Status</th>
             <th>Action</th>
           </thead>
-          <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem }/>    
+          <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem } statusFilter={this.state.status_filter}/>    
         </table>
         <form onSubmit={this.handleSubmit}>
           <div className="row column log-in-form">
@@ -367,4 +445,23 @@ var savedPlaces = [
 React.render(
   <ListQuestions savedPlaces={savedPlaces} />,
   document.getElementById('main')
+);
+
+
+var Logout = React.createClass({
+  logout :function(){
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+    ref.unauth()
+  },
+  render: function(props) {
+    return (
+        <button onClick={this.logout} className="button alert">Logout</button>
+    );
+  }
+});
+
+
+React.render(
+  <Logout/>,
+  document.getElementById('logout')
 );
