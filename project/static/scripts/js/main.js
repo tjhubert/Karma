@@ -261,7 +261,6 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
   handleSubmit: function(e) {
     e.preventDefault();
-    console.log(e);
     if (this.state.address && this.state.address.trim().length !== 0) {
     var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
 
@@ -306,22 +305,21 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         React.createElement("form", {onSubmit: this.handleSubmit}, 
           React.createElement("div", {className: "row column log-in-form"}, 
               React.createElement("h4", {className: "text-center"}, "Post New Question"), 
-              React.createElement("label", null, "Building/address", 
-              React.createElement("div", {className: "input-group"}, 
-                React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
-                  React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "autocomplete", onChange:  this.onChange, value:  this.state.address, name: "address", placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
-              ), 
 
               React.createElement("div", null, 
-                "Or pick from these popular places: ", 
+                "Pick from these popular places: ", 
                 this.props.savedPlaces.map(function(item, i) {
                   return (
                       React.createElement("button", {className: "button hollow small default", onClick:  this.handleClickPlace.bind(null, item) }, item.name)
                   );
                 }.bind(this))
+              ), 
+              React.createElement("label", null, "or type in your address/building name", 
+              React.createElement("div", {className: "input-group"}, 
+                React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
+                  React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "autocomplete", onChange:  this.onChange, value:  this.state.address, name: "address", placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
               )
-
-
+              
               ), 
               React.createElement("label", null, "Room/area", 
                   React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "1234"})

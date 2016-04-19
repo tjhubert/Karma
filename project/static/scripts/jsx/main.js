@@ -260,7 +260,6 @@ var ListQuestions = React.createClass({
 
   handleSubmit: function(e) {
     e.preventDefault();
-    console.log(e);
     if (this.state.address && this.state.address.trim().length !== 0) {
     var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
 
@@ -305,22 +304,21 @@ var ListQuestions = React.createClass({
         <form onSubmit={this.handleSubmit}>
           <div className="row column log-in-form">
               <h4 className="text-center">Post New Question</h4>
-              <label>Building/address
-              <div className="input-group">
-                <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
-                  <input className="input-group-field" type="text" id="building" ref="autocomplete" onChange={ this.onChange }  value={ this.state.address } name="address" placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
-              </div>
 
               <div>
-                Or pick from these popular places:&nbsp;
+                Pick from these popular places:&nbsp;
                 {this.props.savedPlaces.map(function(item, i) {
                   return (
                       <button className="button hollow small default" onClick={ this.handleClickPlace.bind(null, item) } >{item.name}</button>
                   );
                 }.bind(this))}
               </div>
-
-
+              <label>or type in your address/building name
+              <div className="input-group">
+                <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
+                  <input className="input-group-field" type="text" id="building" ref="autocomplete" onChange={ this.onChange }  value={ this.state.address } name="address" placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
+              </div>
+              
               </label>
               <label>Room/area
                   <input type="text" id="room" onChange={ this.onChange } value={ this.state.room } name="room" placeholder="1234"/>
