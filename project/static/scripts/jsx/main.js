@@ -59,9 +59,9 @@ var QuestionPost = React.createClass({
     var _this = this;
 
     function mapObject(object, callback) {
-      return Object.keys(object).map(function (key) {
-        return callback(object[key], key);
-      });
+        return Object.keys(object).map(function (key) {
+          return callback(object[key], key);
+        });
     }
 
     var createItem = function(item, key) {

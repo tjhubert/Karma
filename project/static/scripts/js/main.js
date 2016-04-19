@@ -60,9 +60,9 @@ var QuestionPost = React.createClass({displayName: "QuestionPost",
     var _this = this;
 
     function mapObject(object, callback) {
-      return Object.keys(object).map(function (key) {
-        return callback(object[key], key);
-      });
+        return Object.keys(object).map(function (key) {
+          return callback(object[key], key);
+        });
     }
 
     var createItem = function(item, key) {
@@ -70,6 +70,7 @@ var QuestionPost = React.createClass({displayName: "QuestionPost",
       return (
         React.createElement("tr", {key:  key }, 
           React.createElement("td", null, item.location), 
+          React.createElement("td", null, item.room), 
           React.createElement("td", null, item.topic), 
           React.createElement("td", null, item.description), 
           React.createElement("td", null, React.createElement(StatusAlert, {status: item.status})), 
@@ -284,6 +285,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         React.createElement("table", {className: "table table-striped"}, 
           React.createElement("thead", null, 
             React.createElement("th", null, "Location"), 
+            React.createElement("th", null, "Room"), 
             React.createElement("th", null, "Topic"), 
             React.createElement("th", null, "Description"), 
             React.createElement("th", null, "Status"), 
