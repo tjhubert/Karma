@@ -85,9 +85,16 @@ var QuestionPost = React.createClass({
 
 var ListQuestions = React.createClass({
   mixins:[ReactFireMixin],
-
   // sets initial state
   getInitialState: function(){
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+    var authData = ref.getAuth();
+    if (authData) {
+      console.log("Authenticated user with uid:", authData.uid);
+    }
+    else{
+      console.log("not Authenticated")
+    }
     return { 
       items:{},
       location: '',
@@ -318,7 +325,26 @@ var ListQuestions = React.createClass({
 
 });
 
+
+var Logout = React.createClass({
+  logout :function(){
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+    ref.unauth()
+  },
+  render: function(props) {
+    return (
+        <button onClick={this.logout} className="button alert">Logout</button>
+    );
+  }
+});
+
+
 React.render(
   <ListQuestions/>,
   document.getElementById('main')
+);
+
+React.render(
+  <Logout/>,
+  document.getElementById('logout')
 );

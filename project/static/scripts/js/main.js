@@ -86,9 +86,16 @@ var QuestionPost = React.createClass({displayName: "QuestionPost",
 
 var ListQuestions = React.createClass({displayName: "ListQuestions",
   mixins:[ReactFireMixin],
-
   // sets initial state
   getInitialState: function(){
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+    var authData = ref.getAuth();
+    if (authData) {
+      console.log("Authenticated user with uid:", authData.uid);
+    }
+    else{
+      console.log("not Authenticated")
+    }
     return { 
       items:{},
       location: '',
@@ -319,9 +326,28 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
 });
 
+
+var Logout = React.createClass({displayName: "Logout",
+  logout :function(){
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+    ref.unauth()
+  },
+  render: function(props) {
+    return (
+        React.createElement("button", {onClick: this.logout, className: "button alert"}, "Logout")
+    );
+  }
+});
+
+
 React.render(
   React.createElement(ListQuestions, null),
   document.getElementById('main')
+);
+
+React.render(
+  React.createElement(Logout, null),
+  document.getElementById('logout')
 );
 
 },{}]},{},[1])
