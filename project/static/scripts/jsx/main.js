@@ -5,16 +5,16 @@ var StatusAlert = React.createClass({
     var status = this.props.status;
     var label;
     if (status == "Unclaimed"){
-      label = "alert label";
+      label = "status-alert";
     }
     else if (status == "Finished"){
-      label = "success label";
+      label = "status-success";
     }
     else if (status == "In Progress"){
-      label = "warning label";
+      label = "status-warning";
     }
     else{
-      label = "secondary label"
+      label = "status-secondary"
     }
     return (
         <span className={label}> {status} </span>
@@ -32,21 +32,21 @@ var ActionComponent = React.createClass({
     if (status == "Unclaimed"){
       text = "Claim"
       func = this.props.claimItem
-      label = "button alert tiny";
+      label = "button alert small";
     }
     else if (status == "Finished"){
       func = ""
       text = "None"
-      label = "button secondary tiny disabled";
+      label = "button secondary small disabled";
     }
     else if (status == "In Progress"){
       text = "Finish"
       func = this.props.finishItem
-      label = "button success tiny"
+      label = "button success small"
     }
     else{
       text = "Error"
-      label = "secondary button disabled tiny"
+      label = "secondary button disabled small"
     }
     return (
         <span onClick={func} className={label}>{text}</span>
@@ -56,25 +56,31 @@ var ActionComponent = React.createClass({
 
 
 var QuestionPost = React.createClass({
-  render: function(props) {
+  render: function() {
     var _this = this;
-    var createItem = function(item, index) {
-      if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
-        return (
-          <tr key={ index }>
-            <td>{item.location}</td>
-            <td>{item.topic}</td>
-            <td>{item.description}</td>
-            <td><StatusAlert status={item.status}/></td>
-            <td>
-              <ActionComponent status={item.status} claimItem={ _this.props.claimItem.bind(null, item['.key']) } finishItem = { _this.props.finishItem.bind(null, item['.key']) } />
-            </td>
-          </tr>
-        );
-      }
-      
+
+    function mapObject(object, callback) {
+        return Object.keys(object).map(function (key) {
+          return callback(object[key], key);
+        });
+    }
+
+    var createItem = function(item, key) {
+
+      return (
+        <tr key={ key }>
+          <td>{item.address}</td>
+          <td>{item.room}</td>
+          <td>{item.topic}</td>
+          <td>{item.description}</td>
+          <td><StatusAlert status={item.status}/></td>
+          <td>
+            <ActionComponent status={item.status} claimItem={ _this.props.claimItem.bind(null, key) } finishItem = { _this.props.finishItem.bind(null, key) } />
+          </td>
+        </tr>
+      );
     };
-    return <tbody>{ this.props.items.map(createItem) }</tbody>;
+    return <tbody>{ mapObject(this.props.items, createItem) }</tbody>;
   }
 });
 
@@ -97,36 +103,99 @@ var ListQuestions = React.createClass({
       }
     });
 
-    var firebaseref = new Firebase("https://karmadb.firebaseio.com/user");
-    firebaseref.child(user_uid).once("value", function(dataSnapshot) {
+    var userFirebaseRef = new Firebase("https://karmadb.firebaseio.com/user");
+    userFirebaseRef.child(user_uid).once("value", function(dataSnapshot) {
       user_email_auth = dataSnapshot.child('email').val();
       limit_auth = dataSnapshot.child('limit').val();
       that.setState({user_email:user_email_auth})
       that.setState({user_limit:limit_auth})
-    })
+    });
 
     return { 
-          user_uid: user_uid,
-          items:{},
-          location: '',
-          topic: '',
-          description: '',
-          status: 'Unclaimed',
-          status_filter: 'all',
-          my_user: '' 
-        };
+      user_uid: user_uid,
+      status_filter: 'all',
+      my_user: '',
+      items:{},
+      address: '',
+      topic: '',
+      description: '',
+      status: 'Unclaimed',
+      geolocation: {},
+      room: '',
+      disabledAutocomplete: false,
+      currentGeolocation: {}
+    }
   },
-  
+
+  initAutocomplete: function() {
+    // Create the autocomplete object, restricting the search to geographical
+    // location types.
+
+    var that = this;
+
+    autocomplete = new google.maps.places.Autocomplete(
+        /** @type {!HTMLInputElement} */(this.refs.autocomplete),
+        {types: ['geocode']});
+
+    google.maps.event.addDomListener(this.refs.autocomplete, 'keydown', function(e) { 
+        if (e.keyCode == 13 && $('.pac-container:visible').length) { 
+            e.preventDefault(); 
+        }
+    }); 
+
+    autocomplete.addListener('place_changed', function() {
+      var place = autocomplete.getPlace();
+      that.setState({
+        address: place.formatted_address,
+        geolocation: {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng()
+        }
+      });
+      that.geoQuery.updateCriteria({
+        center: [place.geometry.location.lat(), place.geometry.location.lng()],
+        radius: 1
+      });
+    });
+  },
+
+
   componentWillMount: function() {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/items/');
+    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
+    this.geoFire = new GeoFire(firebaseRef.child("_geoFire"));
+    var that = this;
+
     var firebaseRef_user = new Firebase('https://karmadb.firebaseio.com/user/'+this.state.user_uid);
     this.bindAsObject(firebaseRef_user, 'my_user')
     this.setState({user_limit: this.state.my_user.limit})
-    this.bindAsArray(firebaseRef.limitToLast(25), 'items');
-  },
 
+    this.geoQuery = this.geoFire.query({
+      center: [40.110942, -88.21117400000003],
+      radius: 0
+    });
+
+    this.geoQuery.on("key_entered", function(itemKey) {
+      itemKey = itemKey.split(":")[1];
+      firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
+        var question = dataSnapshot.val();
+        var newItems = that.state.items;
+        newItems[itemKey] = question;
+        if (question !== null) {
+          that.setState({items: newItems})
+        }
+      })
+    });
+
+    this.geoQuery.on("key_exited", function(itemKey) {
+      itemKey = itemKey.split(":")[1];
+      firebaseRef.child("items").child(itemKey).off("value");
+      var newItems = that.state.items;
+      delete newItems[itemKey];
+      that.setState({items: newItems});
+    });
+  },
+  
   onChange: function(e) {
-    // this.setState({text: e.target.value});
     this.setState({ [e.target.name]: e.target.value });
   },
 
@@ -159,39 +228,111 @@ var ListQuestions = React.createClass({
     firebaseRef.child('user').child(author_uid).child('limit').transaction(function(current_value){
       return (current_value || 0) + 1
     });
+  },
 
+  geolocate: function(callback) {
+    var that = this;
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        that.setState({
+          geolocation:{
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          }
+        });
+        that.geoQuery.updateCriteria({
+          center: [position.coords.latitude, position.coords.longitude],
+          radius: 1
+        });
+        var circle = new google.maps.Circle({
+          center: that.state.geolocation,
+          radius: position.coords.accuracy
+        });
+        autocomplete.setBounds(circle.getBounds());
+        typeof callback === 'function' && callback();
+      });
+    }
+  },
+
+  fillAddressFromGeolocate: function() {
+
+    var that = this;
+
+    this.setState({disabledAutocomplete: true});
+    this.setState({address: "Finding your location..."});
+
+    var mainMethod = function() {
+      var geocoder = new google.maps.Geocoder();
+      var latLng = new google.maps.LatLng(that.state.geolocation.lat, that.state.geolocation.lng);
+      geocoder.geocode( { 'location': latLng}, function(results, status) {
+        that.setState({disabledAutocomplete: false});
+        if (status == google.maps.GeocoderStatus.OK) {
+          if (results[0]) {
+            that.setState({address:results[0].formatted_address});
+          }
+        } else {
+            console.log("fail geocoding: " + status);
+        }
+
+
+      });
+    }
+    if (!this.state.geolocation || $.isEmptyObject(this.state.geolocation)) {
+      this.geolocate(mainMethod);
+    }
+    else {
+      mainMethod();
+    }
+  },
+
+  handleClickPlace: function(place, e) {
+    e.preventDefault();
+
+    this.setState({
+      address: place.address,
+      geolocation: place.geolocation
+    });
+    this.geoQuery.updateCriteria({
+      center: [place.geolocation.lat, place.geolocation.lng],
+      radius: 1
+    });
   },
 
   handleSubmit: function(e) {
     e.preventDefault();
-    if (this.state.my_user.limit > 0 && this.state.location && this.state.location.trim().length !== 0) {
 
-      var firebaseRef = new Firebase('https://karmadb.firebaseio.com/user/');
-      firebaseRef.child(this.state.user_uid).child('limit').transaction(function(current_value){
+    if (this.state.my_user.limit > 0 && this.state.address && this.state.address.trim().length !== 0) {
+      var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
+      var userFirebaseRef = new Firebase('https://karmadb.firebaseio.com/user/');
+      userFirebaseRef.child(this.state.user_uid).child('limit').transaction(function(current_value){
         return (current_value || 0) - 1
       });
-      var id = this.firebaseRefs['items'].push({
-        location: this.state.location,
+
+      var id = firebaseRef.child('items').push({
+        address: this.state.address,
         topic: this.state.topic,
         status: 'Unclaimed',
         description: this.state.description,
+        geolocation: this.state.geolocation,
+        room: this.state.room,
         author_uid: this.state.user_uid,
         author_email: this.state.user_email,
         author_limit: this.state.my_user.limit
-
       });
 
-      var new_post_id = id.key()
-      
-      firebaseRef.child(this.state.user_uid).child('post').child(new_post_id).set({
-        location: this.state.location,
+      this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
+
+      userFirebaseRef.child(this.state.user_uid).child('post').child(id.key()).set({
+        address: this.state.address,
+        room: this.state.room,
         topic: this.state.topic,
         status: 'Unclaimed',
         description: this.state.description
       });
+
       this.setState({
-        // text: '',
-        location: '',
+        address: '',
         topic: '',
         status: 'Unclaimed',
         description: ''
@@ -225,7 +366,8 @@ var ListQuestions = React.createClass({
       <a className="button" onClick={this.statusfilterA}>ALL</a>
         <table className="table table-striped">
           <thead>
-            <th>Location</th>
+            <th>Address</th>
+            <th>Room</th>
             <th>Topic</th>
             <th>Description</th>
             <th>Status</th>
@@ -236,8 +378,23 @@ var ListQuestions = React.createClass({
         <form onSubmit={this.handleSubmit}>
           <div className="row column log-in-form">
               <h4 className="text-center">Post New Question</h4>
-              <label>Location
-                  <input type="text" id="location" onChange={ this.onChange } value={ this.state.location } name="location" placeholder="Location"/>
+              <label>Type in your address/building name
+              <div className="input-group">
+                <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
+                  <input className="input-group-field" type="text" id="building" ref="autocomplete" onChange={ this.onChange }  value={ this.state.address } name="address" placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
+              </div>
+              <div>
+                or pick from these popular places:&nbsp;
+                {this.props.savedPlaces.map(function(item, i) {
+                  return (
+                      <button className="button hollow small default" onClick={ this.handleClickPlace.bind(null, item) } >{item.name}</button>
+                  );
+                }.bind(this))}
+              </div>
+
+              </label>
+              <label>Room/area
+                  <input type="text" id="room" onChange={ this.onChange } value={ this.state.room } name="room" placeholder="1234"/>
               </label>
               <label>Topic
                   <input type="text" id="topic" onChange={ this.onChange } value={ this.state.topic } name="topic" placeholder="Topic"/>
@@ -245,7 +402,7 @@ var ListQuestions = React.createClass({
               <label>Description
                   <input type="text" id="description" onChange={ this.onChange } value={ this.state.description } name="description" placeholder="Brief description" />
               </label>
-              <input type="submit" className="button expanded" value="Submit" />
+              <input type="submit" className="button success expanded" value="Submit" />
           </div>
         </form>
       </div>
@@ -254,9 +411,35 @@ var ListQuestions = React.createClass({
 
 });
 
+var savedPlaces = [
+  {
+    name: "Siebel",
+    address: "Thomas M. Siebel Center for Computer Science, 201 N Goodwin Ave, Urbana, IL 61801, USA",
+    geolocation: {
+      lat: 40.11402580000001,
+      lng: -88.22480730000001
+    } 
+  },
+  {
+    name: "ECEB",
+    address: "Electrical and Computer Engineering Building, 306 N Wright St, Urbana, IL 61801, USA",
+    geolocation: {
+      lat: 40.114918,
+      lng: -88.22825309999996
+    }
+  },
+  {
+    name: "Grainger",
+    address: "1301 W Springfield Ave, Urbana, IL 61801, USA",
+    geolocation : {
+      lat: 40.1123977,
+      lng: -88.22727479999998
+    }
+  }
+];
 
 React.render(
-  <ListQuestions  />,
+  <ListQuestions savedPlaces={savedPlaces} />,
   document.getElementById('main')
 );
 
