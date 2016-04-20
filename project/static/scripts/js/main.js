@@ -1,6 +1,4 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/** @jsx React.DOM */
-
 var StatusAlert = React.createClass({displayName: "StatusAlert",
   render: function(props) {
     var status = this.props.status;
@@ -19,6 +17,38 @@ var StatusAlert = React.createClass({displayName: "StatusAlert",
     }
     return (
         React.createElement("span", {className: label}, " ", status, " ")
+    );
+  }
+});
+
+var FilterButtons = React.createClass({displayName: "FilterButtons",
+  render: function(props) {
+    var _this = this
+    var filter_status = _this.props.filter_status;
+
+    var disabledU = ''
+    var disabledA = ''
+    var disabledIP = ''
+    var disabledF = ''
+    if (filter_status == "Unclaimed"){
+      disabledU = "disabled";
+    }
+    else if (filter_status == "Finished"){
+      disabledF = "disabled";
+    }
+    else if (filter_status == "In Progress"){
+      disabledIP = "disabled";
+    }
+    else if (filter_status == "all"){
+      disabledA = "disabled";
+    }
+    return (
+      React.createElement("div", null, 
+        React.createElement("a", {className: 'button ' + disabledF, onClick: _this.props.clickF}, "Finished"), 
+        React.createElement("a", {className: 'button ' + disabledU, onClick: _this.props.clickU}, "Unclaimed"), 
+        React.createElement("a", {className: "button " + disabledIP, onClick: _this.props.clickIP}, "In Progress"), 
+        React.createElement("a", {className: "button " + disabledA, onClick: _this.props.clickA}, "ALL")
+      )
     );
   }
 });
@@ -341,6 +371,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
       this.setState({
         address: '',
+        room:'',
         topic: '',
         status: 'Unclaimed',
         description: ''
@@ -368,10 +399,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       React.createElement("div", null, 
       React.createElement("p", null, "Registered as: ", this.state.user_email), 
       React.createElement("p", null, "Post limit: ", this.state.my_user.limit), 
-      React.createElement("a", {className: "button", onClick: this.statusfilterF}, "Finished"), 
-      React.createElement("a", {className: "button", onClick: this.statusfilterU}, "Unclaimed"), 
-      React.createElement("a", {className: "button", onClick: this.statusfilterIP}, "In Progress"), 
-      React.createElement("a", {className: "button", onClick: this.statusfilterA}, "ALL"), 
+        React.createElement(FilterButtons, {filter_status: this.state.status_filter, clickF: this.statusfilterF, clickU: this.statusfilterU, clickIP: this.statusfilterIP, clickA: this.statusfilterA}), 
         React.createElement("table", {className: "table table-striped"}, 
           React.createElement("thead", null, 
             React.createElement("th", null, "Address"), 

@@ -1,5 +1,3 @@
-/** @jsx React.DOM */
-
 var StatusAlert = React.createClass({
   render: function(props) {
     var status = this.props.status;
@@ -18,6 +16,38 @@ var StatusAlert = React.createClass({
     }
     return (
         <span className={label}> {status} </span>
+    );
+  }
+});
+
+var FilterButtons = React.createClass({
+  render: function(props) {
+    var _this = this
+    var filter_status = _this.props.filter_status;
+
+    var disabledU = ''
+    var disabledA = ''
+    var disabledIP = ''
+    var disabledF = ''
+    if (filter_status == "Unclaimed"){
+      disabledU = "disabled";
+    }
+    else if (filter_status == "Finished"){
+      disabledF = "disabled";
+    }
+    else if (filter_status == "In Progress"){
+      disabledIP = "disabled";
+    }
+    else if (filter_status == "all"){
+      disabledA = "disabled";
+    }
+    return (
+      <div>
+        <a className={'button ' + disabledF} onClick={_this.props.clickF}>Finished</a>
+        <a className={'button ' + disabledU} onClick={_this.props.clickU}>Unclaimed</a>
+        <a className={"button " + disabledIP} onClick={_this.props.clickIP}>In Progress</a>
+        <a className={"button " + disabledA} onClick={_this.props.clickA}>ALL</a>
+      </div>
     );
   }
 });
@@ -340,6 +370,7 @@ var ListQuestions = React.createClass({
 
       this.setState({
         address: '',
+        room:'',
         topic: '',
         status: 'Unclaimed',
         description: ''
@@ -367,10 +398,7 @@ var ListQuestions = React.createClass({
       <div>
       <p>Registered as: {this.state.user_email}</p>
       <p>Post limit: {this.state.my_user.limit}</p>
-      <a className="button" onClick={this.statusfilterF}>Finished</a>
-      <a className="button" onClick={this.statusfilterU}>Unclaimed</a>
-      <a className="button" onClick={this.statusfilterIP}>In Progress</a>
-      <a className="button" onClick={this.statusfilterA}>ALL</a>
+        <FilterButtons filter_status={this.state.status_filter} clickF={this.statusfilterF} clickU={this.statusfilterU} clickIP={this.statusfilterIP} clickA={this.statusfilterA} />
         <table className="table table-striped">
           <thead>
             <th>Address</th>

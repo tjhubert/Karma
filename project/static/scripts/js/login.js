@@ -3,11 +3,20 @@ var LoginForm = React.createClass({displayName: "LoginForm",
 
   // sets initial state
   getInitialState: function(){
-    return { searchString: '',
-            error: 'test' };
-  },
+    var ref = new Firebase("https://karmadb.firebaseio.com");
+    var user_uid;
+    ref.onAuth(function(authData) {
+      if (authData) {
+        console.log("Authenticated with uid:", authData.uid);
+        window.location = '/main'
+      }
+    });
 
-  // sets state, triggers render method
+    return { 
+      searchString: '',
+      error: 'test' 
+    };
+  },
   handleChange: function(event){
     // grab value form input box
     this.setState({searchString:event.target.value});
@@ -20,6 +29,7 @@ var LoginForm = React.createClass({displayName: "LoginForm",
     this.setState({error:''})
   },
   tryLogIn: function(e) {
+    var that = this
     e.preventDefault();
     var ref = new Firebase("https://karmadb.firebaseio.com");
 
@@ -28,35 +38,13 @@ var LoginForm = React.createClass({displayName: "LoginForm",
         password : this.refs.inputPassword.getDOMNode().value
       }, function(error, authData) {
       if (error) {
+        that.setState({error:'invalid'});
         console.log("Login Failed!", error);
       } else {
         window.location = "/main";
         console.log("Authenticated successfully with payload:", authData);
       }
     });
-
-    // e.preventDefault();
-    // fetch('/checkAuth', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Accept': 'application/json',
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     inputUsername: this.refs.inputUsername.getDOMNode().value,
-    //     inputPassword: this.refs.inputPassword.getDOMNode().value,
-    //   })
-    // })
-    // .then((response) => {
-    //   if (response.status === 200) {
-    //     window.location = "/main";
-    //   } else {
-    //     this.setState({error:'invalid'});
-    //   }
-    // })
-    // .catch((error) => {
-    //   console.warn(error);
-    // });
   },
 
   render: function() {
@@ -68,9 +56,8 @@ var LoginForm = React.createClass({displayName: "LoginForm",
               React.createElement("form", {"data-abide": true, noValidate: true, id: "log-in-form"}, 
                   React.createElement("div", null, 
                       React.createElement("h3", {id: "login_header", className: "text-center"}, "Karma"), 
-                      React.createElement("label", null, "Username", 
+                      React.createElement("label", null, "Email", 
                           React.createElement("input", {onChange: this.cleanCSS, className: this.state.error, type: "text", placeholder: "Username", ref: "inputUsername", required: true})
-                          
                       ), 
                       React.createElement("label", null, "Password", 
                           React.createElement("input", {onChange: this.cleanCSS, className: this.state.error, type: "password", placeholder: "Password", ref: "inputPassword", pattern: "password", required: true})
