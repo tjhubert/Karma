@@ -10,18 +10,18 @@ var RegisterForm = React.createClass({displayName: "RegisterForm",
       errorUsername: true,
       errorPassword: true,
       errorName: true,
-      error: true
+      error: true,
+      errorMsg: ''
     };
   },
 
   // sets state, triggers render method
   handleChange: function(event){
-    // grab value form input box
-    // this.setState({searchString:event.target.value});
-    // console.log("scope updated!")
+
   },
 
   componentDidMount: function() {
+
   },
   nameVerify:function(e){
     str = e.target.value
@@ -30,7 +30,6 @@ var RegisterForm = React.createClass({displayName: "RegisterForm",
       this.setState({errorName: true })
     }
     else{
-
       this.setState({errorName: false})
       e.target.className = ""
     }
@@ -75,40 +74,52 @@ var RegisterForm = React.createClass({displayName: "RegisterForm",
     }
   },
   tryRegister: function(e) {
-    e.preventDefault();
-      if( !(this.state.errorName || this.state.errorEmail || this.state.errorUsername || this.state.errorPassword) ){
-        fetch('/addUser', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputUsername: this.refs.inputUsername.getDOMNode().value,
-          inputPassword: this.refs.inputPassword.getDOMNode().value,
-          inputFullName: this.refs.inputFullName.getDOMNode().value,
-          inputEmail: this.refs.inputEmail.getDOMNode().value,
-        })
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          window.location = "/main";
-        }
-        else if (response.status == 499){
-          this.setState({errorUsername: true})
-          this.refs.inputUsername.getDOMNode().className = 'invalid'
-          this.refs.inputUsername.getDOMNode().value = ''
+    e.preventDefault()
+    var that = this
+    if( !(this.state.errorName || this.state.errorEmail || this.state.errorUsername || this.state.errorPassword) ){
+      var ref = new Firebase("https://karmadb.firebaseio.com");
+      ref.createUser({
+        email    : that.refs.inputEmail.getDOMNode().value,
+        password : that.refs.inputPassword.getDOMNode().value
+      }, function(error, userData) {
+        if (error) {
+          that.setState({errorMsg: error.code})
+          if (error.code == 'EMAIL_TAKEN'){
+            that.setState({errorEmail: true})
+            that.refs.inputEmail.getDOMNode().className = 'invalid'
+          }
+          console.log("Error creating user:", error.code);
+
         } 
         else {
-          // this.setState({error:'invalid'})
-          // console.log(response.text());
+          console.log("Successfully created user account with uid:", userData.uid);
+          
+          //Push data to FB
+          ref.child('user').child(userData.uid).set({
+            name: that.refs.inputFullName.getDOMNode().value,
+            email: that.refs.inputEmail.getDOMNode().value,
+            limit: 2,
+            uid: userData.uid,
+            post: {
+              
+            }
+          });
+
+          //Log new user in
+          ref.authWithPassword({
+            email    : that.refs.inputEmail.getDOMNode().value,
+            password : that.refs.inputPassword.getDOMNode().value
+          }, function(error, authData) {
+            if (error) {
+              console.log("Login Failed!", error);
+            } else {
+              window.location = '/main'
+              console.log("Authenticated successfully with payload:", authData);
+            }
+          });
         }
-      })
-      .catch((error) => {
-        console.warn(error);
       });
     }
-    
   },
 
   render: function() {
@@ -132,7 +143,7 @@ var RegisterForm = React.createClass({displayName: "RegisterForm",
                       React.createElement("label", null, "Password", 
                           React.createElement("input", {onChange: this.passwordVerify, type: "password", placeholder: "Password", ref: "inputPassword", required: true, pattern: "alpha_numeric"})
                       ), 
-                      
+                      React.createElement("p", null, this.state.errorMsg), 
                       React.createElement("input", {onClick: this.tryRegister, type: "submit", className: "button expanded success", value: "Register"}), 
                       React.createElement("a", {className: "button expanded", href: "/login"}, "Login")
                   )
