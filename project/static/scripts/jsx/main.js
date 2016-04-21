@@ -292,8 +292,8 @@ var ListQuestions = React.createClass({
     }
   },
 
-  fillAddressFromGeolocate: function() {
-
+  fillAddressFromGeolocate: function(e) {
+    e.preventDefault()
     var that = this;
 
     this.setState({disabledAutocomplete: true});
@@ -315,12 +315,16 @@ var ListQuestions = React.createClass({
 
       });
     }
-    if (!this.state.geolocation || $.isEmptyObject(this.state.geolocation)) {
-      this.geolocate(mainMethod);
-    }
-    else {
-      mainMethod();
-    }
+
+    this.geolocate(mainMethod);
+    
+    // if (!this.state.geolocation || $.isEmptyObject(this.state.geolocation)) {
+    //   console.log('this')
+    //   this.geolocate(mainMethod);
+    // }
+    // else {
+    //   mainMethod();
+    // }
   },
 
   handleClickPlace: function(place, e) {
@@ -422,7 +426,7 @@ var ListQuestions = React.createClass({
                 or pick from these popular places:&nbsp;
                 {this.props.savedPlaces.map(function(item, i) {
                   return (
-                      <button className="button hollow small default" onClick={ this.handleClickPlace.bind(null, item) } >{item.name}</button>
+                      <a className="button hollow small default" onClick={ this.handleClickPlace.bind(null, item) } >{item.name}</a>
                   );
                 }.bind(this))}
               </div>
@@ -437,7 +441,7 @@ var ListQuestions = React.createClass({
               <label>Description
                   <input type="text" id="description" onChange={ this.onChange } value={ this.state.description } name="description" placeholder="Brief description" />
               </label>
-              <input type="submit" className="button success expanded" value="Submit" />
+              <button type="submit" className="button success expanded" value="Submit">Submit</button>
           </div>
         </form>
       </div>

@@ -23798,8 +23798,8 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     }
   },
 
-  fillAddressFromGeolocate: function() {
-
+  fillAddressFromGeolocate: function(e) {
+    e.preventDefault()
     var that = this;
 
     this.setState({disabledAutocomplete: true});
@@ -23821,12 +23821,16 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
       });
     }
-    if (!this.state.geolocation || $.isEmptyObject(this.state.geolocation)) {
-      this.geolocate(mainMethod);
-    }
-    else {
-      mainMethod();
-    }
+
+    this.geolocate(mainMethod);
+    
+    // if (!this.state.geolocation || $.isEmptyObject(this.state.geolocation)) {
+    //   console.log('this')
+    //   this.geolocate(mainMethod);
+    // }
+    // else {
+    //   mainMethod();
+    // }
   },
 
   handleClickPlace: function(place, e) {
@@ -23928,7 +23932,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
                 "or pick from these popular places: ", 
                 this.props.savedPlaces.map(function(item, i) {
                   return (
-                      React.createElement("button", {className: "button hollow small default", onClick:  this.handleClickPlace.bind(null, item) }, item.name)
+                      React.createElement("a", {className: "button hollow small default", onClick:  this.handleClickPlace.bind(null, item) }, item.name)
                   );
                 }.bind(this))
               )
@@ -23943,7 +23947,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
               React.createElement("label", null, "Description", 
                   React.createElement("input", {type: "text", id: "description", onChange:  this.onChange, value:  this.state.description, name: "description", placeholder: "Brief description"})
               ), 
-              React.createElement("input", {type: "submit", className: "button success expanded", value: "Submit"})
+              React.createElement("button", {type: "submit", className: "button success expanded", value: "Submit"}, "Submit")
           )
         )
       )
