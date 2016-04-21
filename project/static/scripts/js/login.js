@@ -57,7 +57,7 @@ var LoginForm = React.createClass({displayName: "LoginForm",
                   React.createElement("div", null, 
                       React.createElement("h3", {id: "login_header", className: "text-center"}, "Karma"), 
                       React.createElement("label", null, "Email", 
-                          React.createElement("input", {onChange: this.cleanCSS, className: this.state.error, type: "text", placeholder: "Username", ref: "inputUsername", required: true})
+                          React.createElement("input", {onChange: this.cleanCSS, className: this.state.error, type: "text", placeholder: "Email", ref: "inputUsername", required: true})
                       ), 
                       React.createElement("label", null, "Password", 
                           React.createElement("input", {onChange: this.cleanCSS, className: this.state.error, type: "password", placeholder: "Password", ref: "inputPassword", pattern: "password", required: true})
