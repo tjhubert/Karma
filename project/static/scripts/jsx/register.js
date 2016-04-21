@@ -45,18 +45,6 @@ var RegisterForm = React.createClass({
       e.target.className = ""
     }
   },
-  usernameVerify:function(e){
-    str = e.target.value
-    if(str.trim().length < 2){
-      e.target.className = "invalid"
-      this.setState({errorUsername: true })
-    }
-    else{
-
-      this.setState({errorUsername: false})
-      e.target.className = ""
-    }
-  },
   emailVerify:function(e){
     var re = /[^\s@]+@illinois\.edu$/
     email = e.target.value
@@ -75,7 +63,7 @@ var RegisterForm = React.createClass({
   tryRegister: function(e) {
     e.preventDefault()
     var that = this
-    if( !(this.state.errorName || this.state.errorEmail || this.state.errorUsername || this.state.errorPassword) ){
+    if( !(this.state.errorName || this.state.errorEmail || this.state.errorPassword) ){
       var ref = new Firebase("https://karmadb.firebaseio.com");
       ref.createUser({
         email    : that.refs.inputEmail.getDOMNode().value,
@@ -88,11 +76,32 @@ var RegisterForm = React.createClass({
             that.refs.inputEmail.getDOMNode().className = 'invalid'
           }
           console.log("Error creating user:", error.code);
+          alert("Error creating user: "+ error.code + "\nPlease retry.")
 
         } 
         else {
           console.log("Successfully created user account with uid:", userData.uid);
           
+          var onComplete = function(error) {
+            if (error) {
+              console.log('Synchronization failed');
+              alert("Please send an email to admin with your email address you used to register.")
+            } else {
+              //Log new user in
+              ref.authWithPassword({
+                email    : that.refs.inputEmail.getDOMNode().value,
+                password : that.refs.inputPassword.getDOMNode().value
+              }, function(error, authData) {
+                if (error) {
+                  console.log("Login Failed!", error);
+                } else {
+                  window.location = '/main'
+                  console.log("Authenticated successfully with payload:", authData);
+                }
+              });
+            }
+          };
+
           //Push data to FB
           ref.child('user').child(userData.uid).set({
             name: that.refs.inputFullName.getDOMNode().value,
@@ -102,20 +111,9 @@ var RegisterForm = React.createClass({
             post: {
               
             }
-          });
+          }, onComplete);
 
-          //Log new user in
-          ref.authWithPassword({
-            email    : that.refs.inputEmail.getDOMNode().value,
-            password : that.refs.inputPassword.getDOMNode().value
-          }, function(error, authData) {
-            if (error) {
-              console.log("Login Failed!", error);
-            } else {
-              window.location = '/main'
-              console.log("Authenticated successfully with payload:", authData);
-            }
-          });
+
         }
       });
     }
@@ -130,14 +128,11 @@ var RegisterForm = React.createClass({
                   <div className="row column log-in-form">
 
                       <h4 className="text-center">Register {this.state.error}</h4>
-                      <label>Username
-                          <input onChange={this.usernameVerify} type="text" placeholder="johndoe12" ref="inputUsername" required />
-                      </label>
                       <label>Full Name
                           <input onChange={this.nameVerify} type="text" placeholder="John Doe"  ref="inputFullName" required/>
                       </label>
                       <label>Email (...@illinois.edu)
-                          <input onChange={this.emailVerify} type="text" placeholder="johndoe@example.com" ref="inputEmail" required/>
+                          <input onChange={this.emailVerify} type="text" placeholder="johndoe@illinois.edu" ref="inputEmail" required/>
                       </label>
                       <label>Password
                           <input onChange={this.passwordVerify} type="password" placeholder="Password" ref="inputPassword" required pattern="alpha_numeric"/>
