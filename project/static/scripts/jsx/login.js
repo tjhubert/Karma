@@ -56,7 +56,7 @@ var LoginForm = React.createClass({
                   <div>
                       <h3 id="login_header" className="text-center">Karma</h3>
                       <label>Email
-                          <input onChange={this.cleanCSS} className={this.state.error} type="text" placeholder="Username" ref="inputUsername" required />
+                          <input onChange={this.cleanCSS} className={this.state.error} type="text" placeholder="Email" ref="inputUsername" required />
                       </label>
                       <label>Password
                           <input onChange={this.cleanCSS} className={this.state.error} type="password" placeholder="Password" ref="inputPassword" pattern="password" required />
