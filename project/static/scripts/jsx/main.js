@@ -121,16 +121,17 @@ var ListQuestions = React.createClass({
 
   // sets initial state
   getInitialState: function(){
-    var that = this
+    var that = this;
     var ref = new Firebase("https://karmadb.firebaseio.com");
     var user_uid;
     ref.onAuth(function(authData) {
+    console.log(authData);
       if (authData) {
         user_uid = authData.uid
         console.log("Authenticated with uid:", authData.uid);
       } else {
-        window.location = '/login'
-        console.log("Client unauthenticated.")
+        window.location = '/login';
+        console.log("Client unauthenticated.");
       }
     });
 

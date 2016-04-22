@@ -3,13 +3,11 @@ var LoginForm = React.createClass({displayName: "LoginForm",
 
   // sets initial state
   getInitialState: function(){
-    var ref = new Firebase("https://karmadb.firebaseio.com");
+    this.firebaseRef = new Firebase("https://karmadb.firebaseio.com");
     var user_uid;
-    ref.onAuth(function(authData) {
-      if (authData) {
-        console.log("Authenticated with uid:", authData.uid);
-        window.location = '/main'
-      }
+    var that = this;
+    this.firebaseRef.onAuth(function(authData) {
+      that.verifyIllinoisEmailAndRedirect(authData);
     });
 
     return { 
@@ -17,10 +15,36 @@ var LoginForm = React.createClass({displayName: "LoginForm",
       error: 'test' 
     };
   },
+
   handleChange: function(event){
     // grab value form input box
     this.setState({searchString:event.target.value});
-    console.log("scope updated!")
+    console.log("scope updated!");
+  },
+
+  verifyIllinoisEmailAndRedirect: function(authData) {
+    var that = this;
+    if (authData && authData.google.email.match(/@(illinois|uiuc).edu\s*$/i) ) {
+      console.log("Log In successful!");
+      var username = authData.google.email.split("@")[0];
+      this.firebaseRef.child("users").child(username).once("value", function (dataSnapshot) {
+        var currentUser = dataSnapshot.val();
+        if (currentUser === null) {
+          var newUser = {};
+          newUser[username] = {
+            email: authData.google.email,
+            name: authData.google.displayName,
+            limit: 2,
+            post: {}
+          };
+          that.firebaseRef.child("users").set(newUser);
+        }
+      });
+      window.location = '/main';
+    } else {
+      this.firebaseRef.unauth();
+      console.log("Must use Illinois email");
+    }
   },
 
   componentDidMount: function() {
@@ -33,18 +57,28 @@ var LoginForm = React.createClass({displayName: "LoginForm",
     e.preventDefault();
     var ref = new Firebase("https://karmadb.firebaseio.com");
 
-    ref.authWithPassword({
-        email    : this.refs.inputUsername.getDOMNode().value,
-        password : this.refs.inputPassword.getDOMNode().value
-      }, function(error, authData) {
+    ref.authWithOAuthPopup("google", function(error, authData) {
       if (error) {
-        that.setState({error:'invalid'});
         console.log("Login Failed!", error);
       } else {
-        window.location = "/main";
-        console.log("Authenticated successfully with payload:", authData);
+        that.verifyIllinoisEmailAndRedirect(authData);
       }
+    },{
+      scope: "email"
     });
+
+    // ref.authWithPassword({
+    //     email    : this.refs.inputUsername.getDOMNode().value,
+    //     password : this.refs.inputPassword.getDOMNode().value
+    //   }, function(error, authData) {
+    //   if (error) {
+    //     that.setState({error:'invalid'});
+    //     console.log("Login Failed!", error);
+    //   } else {
+    //     window.location = "/main";
+    //     console.log("Authenticated successfully with payload:", authData);
+    //   }
+    // });
   },
 
   render: function() {
@@ -53,19 +87,9 @@ var LoginForm = React.createClass({displayName: "LoginForm",
       React.createElement("div", {className: "row"}, 
 
           React.createElement("div", {id: "login", className: "medium-6 medium-centered large-4 large-centered columns"}, 
-              React.createElement("form", {"data-abide": true, noValidate: true, id: "log-in-form"}, 
-                  React.createElement("div", null, 
-                      React.createElement("h3", {id: "login_header", className: "text-center"}, "Karma"), 
-                      React.createElement("label", null, "Email", 
-                          React.createElement("input", {onChange: this.cleanCSS, className: this.state.error, type: "text", placeholder: "Email", ref: "inputUsername", required: true})
-                      ), 
-                      React.createElement("label", null, "Password", 
-                          React.createElement("input", {onChange: this.cleanCSS, className: this.state.error, type: "password", placeholder: "Password", ref: "inputPassword", pattern: "password", required: true})
-                      ), 
-                      React.createElement("input", {onClick: this.tryLogIn, type: "submit", className: "button expanded", id: "log-in-button", value: "Log In"}), 
-                      React.createElement("a", {className: "button expanded success", href: "/register"}, "Register")
-                  )
-              )
+                      React.createElement("div", {onClick: this.tryLogIn, className: "button expanded", id: "log-in-button"}, 
+                        "Register/Log In with your Illinois email"
+                      )
           )
       )
     )
