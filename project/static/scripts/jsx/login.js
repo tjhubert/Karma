@@ -24,7 +24,7 @@ var LoginForm = React.createClass({
   verifyIllinoisEmailAndRedirect: function(authData) {
     var that = this;
     if ( authData ){
-      if (authData.google.email.match(/@(illinois|uiuc).edu\s*$/i)) {
+      if (authData.google.email && authData.google.email.match(/@(illinois|uiuc).edu\s*$/i)) {
         console.log("Log In successful!");
         this.firebaseRef.child("users").child(authData.uid).once("value", function (dataSnapshot) {
           var currentUser = dataSnapshot.val();
@@ -86,6 +86,11 @@ var LoginForm = React.createClass({
 
     return (
       <div className="row">
+          <div className="medium-6 medium-centered large-4 large-centered columns">
+            <h2>Charma</h2>
+            <h4>Give help, get help</h4>
+            <h6>There must be somebody else in Grainger who has solved that question on your homework. So, why don't we give each other a hand?</h6>
+          </div>
 
           <div id="login" className="medium-6 medium-centered large-4 large-centered columns">
                       <div onClick={this.tryLogIn} className="button expanded" id="log-in-button">
