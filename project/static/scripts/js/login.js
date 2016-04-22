@@ -24,35 +24,41 @@ var LoginForm = React.createClass({displayName: "LoginForm",
 
   verifyIllinoisEmailAndRedirect: function(authData) {
     var that = this;
-    if ( authData && authData.google.email.match(/@(illinois|uiuc).edu\s*$/i) ) {
-      console.log("Log In successful!");
-      this.firebaseRef.child("users").child(authData.uid).once("value", function (dataSnapshot) {
-        var currentUser = dataSnapshot.val();
-        if (currentUser === null) {
-          var newUser = {
-            uid: authData.uid,
-            email: authData.google.email,
-            name: authData.google.displayName,
-            limit: 2,
-            post: {}
-          };
-          that.firebaseRef.child("users").child(authData.uid).set(newUser, function(error) {
-            if (error) {
-              that.firebaseRef.unauth();
-              console.log("Something wrong happened: ",error);
-            }
-            else {
-              window.location = '/main';
-            }
-          }) ;
-        } else {
-          window.location = '/main';
-        }
-      });
+    if ( authData ){
+      if (authData.google.email.match(/@(illinois|uiuc).edu\s*$/i)) {
+        console.log("Log In successful!");
+        this.firebaseRef.child("users").child(authData.uid).once("value", function (dataSnapshot) {
+          var currentUser = dataSnapshot.val();
+          if (currentUser === null) {
+            var newUser = {
+              uid: authData.uid,
+              email: authData.google.email,
+              name: authData.google.displayName,
+              limit: 2,
+              post: {}
+            };
+            that.firebaseRef.child("users").child(authData.uid).set(newUser, function(error) {
+              if (error) {
+                that.firebaseRef.unauth();
+                console.log("Something wrong happened: ",error);
+              }
+              else {
+                window.location = '/main';
+              }
+            }) ;
+          } else {
+            window.location = '/main';
+          }
+        });
+      } else {
+        this.firebaseRef.unauth();
+        console.log("Must use Illinois email");
+      }
     } else {
-      this.firebaseRef.unauth();
-      console.log("Must use Illinois email");
+      console.log("Auth data not found");
     }
+      
+    
   },
 
   componentDidMount: function() {

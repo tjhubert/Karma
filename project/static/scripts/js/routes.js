@@ -23454,31 +23454,14 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   // sets initial state
   getInitialState: function(){
     var that = this;
-    var ref = new Firebase("https://karmadb.firebaseio.com");
-    var user_uid;
-    ref.onAuth(function(authData) {
-    console.log(authData);
-      if (authData) {
-        user_uid = authData.uid
-        console.log("Authenticated with uid:", authData.uid);
-      } else {
-        window.location = '/login';
-        console.log("Client unauthenticated.");
-      }
-    });
-
-    var userFirebaseRef = new Firebase("https://karmadb.firebaseio.com/user");
-    userFirebaseRef.child(user_uid).once("value", function(dataSnapshot) {
-      user_email_auth = dataSnapshot.child('email').val();
-      limit_auth = dataSnapshot.child('limit').val();
-      that.setState({user_email:user_email_auth})
-      that.setState({user_limit:limit_auth})
-    });
+    this.firebaseRef = new Firebase("https://karmadb.firebaseio.com");
 
     return { 
-      user_uid: user_uid,
+      user_uid: '',
+      user_emaul: '',
+      user_limit: '',
       status_filter: 'all',
-      my_user: '',
+      current_user: '',
       items:{},
       address: '',
       topic: '',
@@ -23489,6 +23472,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       disabledAutocomplete: false,
       currentGeolocation: {}
     }
+    
   },
 
   initAutocomplete: function() {
@@ -23525,13 +23509,30 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
 
   componentWillMount: function() {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
-    this.geoFire = new GeoFire(firebaseRef.child("_geoFire"));
     var that = this;
 
-    var firebaseRef_user = new Firebase('https://karmadb.firebaseio.com/user/'+this.state.user_uid);
-    this.bindAsObject(firebaseRef_user, 'my_user')
-    this.setState({user_limit: this.state.my_user.limit})
+    this.firebaseRef.onAuth(function (authData) {
+
+      if (authData) {
+        var user_uid = authData.uid;
+        that.setState({user_uid: user_uid});
+        that.bindAsObject(that.firebaseRef.child("users").child(user_uid), 'current_user');
+
+        that.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
+          var userObject = dataSnapshot.val();
+          if (userObject !== null) {
+            that.setState({user_email: userObject.email});
+            that.setState({user_limit: userObject.limit}); 
+          }
+        });
+
+      } else {
+        window.location = '/login';
+        console.log("Client unauthenticated.");
+      }
+    });
+
+    this.geoFire = new GeoFire(this.firebaseRef.child("_geoFire"));
 
     this.geoQuery = this.geoFire.query({
       center: [40.110942, -88.21117400000003],
@@ -23542,7 +23543,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
     this.geoQuery.on("key_entered", function(itemKey) {
       itemKey = itemKey.split(":")[1];
-      firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
+      that.firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
         var question = dataSnapshot.val();
         var newItems = that.state.items;
         newItems[itemKey] = question;
@@ -23554,7 +23555,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
     this.geoQuery.on("key_exited", function(itemKey) {
       itemKey = itemKey.split(":")[1];
-      firebaseRef.child("items").child(itemKey).off("value");
+      that.firebaseRef.child("items").child(itemKey).off("value");
       var newItems = that.state.items;
       delete newItems[itemKey];
       that.setState({items: newItems});
@@ -23570,32 +23571,30 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   },
 
   claimItem: function(key) {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/');
     var author_uid;
-    firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
+    this.firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
       author_uid = dataSnapshot.child('author_uid').val();
       email = dataSnapshot.child('author_email').val();
     })
 
-    firebaseRef.child('items').child(key).update({status: 'In Progress'});
-    firebaseRef.child('user').child(author_uid).child('post').child(key).update({status: 'In Progress'});
+    this.firebaseRef.child('items').child(key).update({status: 'In Progress'});
+    this.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'In Progress'});
   },
 
   finishItem: function(key) {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/');
     var author_uid;
     var curr_limit;
-    firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
+    this.firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
       author_uid = dataSnapshot.child('author_uid').val();
     })
-    firebaseRef.child('user').child(author_uid).once("value", function(dataSnapshot) {
+    this.firebaseRef.child('users').child(author_uid).once("value", function(dataSnapshot) {
       curr_limit = dataSnapshot.child('limit').val();
     })
     // curr_limit += 1
-    firebaseRef.child('items').child(key).update({status: 'Finished'});
-    firebaseRef.child('user').child(author_uid).child('post').child(key).update({status: 'Finished'});
+    this.firebaseRef.child('items').child(key).update({status: 'Finished'});
+    this.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'Finished'});
     // firebaseRef.child('user').child(author_uid).update({limit: curr_limit});
-    firebaseRef.child('user').child(author_uid).child('limit').transaction(function(current_value){
+    this.firebaseRef.child('users').child(author_uid).child('limit').transaction(function(current_value){
       return (current_value || 0) + 1
     });
   },
@@ -23676,14 +23675,12 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   handleSubmit: function(e) {
     e.preventDefault();
 
-    if (this.state.my_user.limit > 0 && this.state.address && this.state.address.trim().length !== 0) {
-      var firebaseRef = new Firebase('https://karmadb.firebaseio.com/')
-      var userFirebaseRef = new Firebase('https://karmadb.firebaseio.com/user/');
-      userFirebaseRef.child(this.state.user_uid).child('limit').transaction(function(current_value){
+    if (this.state.current_user.limit > 0 && this.state.address && this.state.address.trim().length !== 0) {
+      this.firebaseRef.child("users").child(this.state.user_uid).child('limit').transaction(function(current_value){
         return (current_value || 0) - 1
       });
 
-      var id = firebaseRef.child('items').push({
+      var id = this.firebaseRef.child('items').push({
         address: this.state.address,
         topic: this.state.topic,
         status: 'Unclaimed',
@@ -23692,12 +23689,12 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         room: this.state.room,
         author_uid: this.state.user_uid,
         author_email: this.state.user_email,
-        author_limit: this.state.my_user.limit
+        author_limit: this.state.current_user.limit
       });
 
       this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
 
-      userFirebaseRef.child(this.state.user_uid).child('post').child(id.key()).set({
+      this.firebaseRef.child("users").child(this.state.user_uid).child('post').child(id.key()).set({
         address: this.state.address,
         room: this.state.room,
         topic: this.state.topic,
@@ -23734,7 +23731,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     return (
       React.createElement("div", null, 
       React.createElement("p", null, "Registered as: ", this.state.user_email), 
-      React.createElement("p", null, "Post limit: ", this.state.my_user.limit), 
+      React.createElement("p", null, "Post limit: ", this.state.current_user.limit), 
         React.createElement(FilterButtons, {filter_status: this.state.status_filter, clickF: this.statusfilterF, clickU: this.statusfilterU, clickIP: this.statusfilterIP, clickA: this.statusfilterA}), 
         React.createElement("table", {className: "table table-striped"}, 
           React.createElement("thead", null, 
