@@ -32,10 +32,10 @@ var ActionComponent = React.createClass({
       func = this.props.claimItem
       label = "button alert small";
     }
-    else if (status == "Finished"){
-      func = ""
-      text = "None"
-      label = "button secondary small disabled";
+    else if (status == "Unclaimed"){
+      text = "Claim"
+      func = this.props.claimItem
+      label = "button alert small";
     }
     else if (status == "In Progress"){
       text = "Finish"
@@ -104,7 +104,10 @@ var ListQuestions = React.createClass({
       geolocation: {},
       room: '',
       disabledAutocomplete: false,
-      current_address: ''
+      current_address: '',
+      tableStatus: 'initializing',
+      initializingUserData: true,
+      initializingUserLocation: true
     }
     
   },
@@ -152,18 +155,12 @@ var ListQuestions = React.createClass({
         that.setState({user_uid: user_uid});
         that.bindAsObject(that.firebaseRef.child("users").child(user_uid), 'current_user');
 
-
-        that.firebaseRef.child("users").child(user_uid).child('post').on("child_changed", function(snapshot, key) {
-          var posts = snapshot.val(); //this.current_user.post
-          console.log(posts);
-          console.log(key);
-        })
-
         that.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
           var userObject = dataSnapshot.val();
           if (userObject !== null) {
             that.setState({user_email: userObject.email});
             that.setState({user_limit: userObject.limit}); 
+            that.setState({initializingUserData: false});
           }
         });
 
@@ -198,6 +195,12 @@ var ListQuestions = React.createClass({
             that.setState({items: newItems})
           }
 
+          if (_.isEmpty(that.state.items)) {
+            that.setState({tableStatus:"empty"});
+          } else {
+            that.setState({tableStatus:"success"});
+          }
+
         }
 
       })
@@ -209,6 +212,9 @@ var ListQuestions = React.createClass({
       var newItems = that.state.items;
       delete newItems[itemKey];
       that.setState({items: newItems});
+      if (_.isEmpty(that.state.items)) {
+        that.setState({tableStatus:"empty"});
+      }
     });
   },
 
@@ -285,6 +291,7 @@ var ListQuestions = React.createClass({
     if (this.state.address) {
       this.setState({current_address: this.state.address});
       this.setState({address: ''});
+      this.setState({initializingUserLocation: false});
     } else {
       var geocoder = new google.maps.Geocoder();
       var latLng = new google.maps.LatLng(this.state.geolocation.lat, this.state.geolocation.lng);
@@ -296,6 +303,7 @@ var ListQuestions = React.createClass({
             that.setState({current_address: "Failed to locate your current location."});
             console.log("fail geocoding: " + status);
         }
+        that.setState({initializingUserLocation: false});
       });
     }
       
@@ -392,24 +400,29 @@ var ListQuestions = React.createClass({
     this.questionForm.close();
   },
 
+  openPostQuestionForm: function() {
+    if (this.state.current_user.limit > 0) {
+      this.questionForm.open();
+    } else {
+      alert('Please wait for your questions to be answered.')
+    }
+  },
+
   render: function() {
 
     return (
       <div>
         <div className="row small-12 columns">
           <div className="columns small-6">
-            <p>Registered as: <strong>{this.state.user_email}</strong></p>
+            <p>{ this.state.initializingUserData ? 'Initializing data..' : 'Hi ' + this.state.current_user.name + '!'}</p>
+            <p>Logged In as: <strong>{ this.state.initializingUserData ? 'Initializing data..' : this.state.user_email}</strong></p>
           </div>
           <div className="columns small-6 text-center">
-            <div className="button success" data-open="post-question-form">
+            <div className="button success" onClick={this.openPostQuestionForm}>
               <i className="fi-plus"></i> Post New Question
             </div>
-            <p>Post limit: <strong>{this.state.current_user.limit}</strong></p>
+            <p>Post limit: <strong>{ this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.limit}</strong></p>
           </div>
-        </div>
-
-        <div className="row columns small-12 text-center">
-          <p>Your current location is: <strong>{this.state.current_address}</strong></p>
         </div>
 
         <div className="row columns small-12 text-center">
@@ -417,23 +430,39 @@ var ListQuestions = React.createClass({
             <div className="input-group">
               <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
                 <input className="input-group-field" onChange={ this.onChange } type="text" id="current_address" ref="current_address_autocomplete"  
-                name="address" value={this.state.address} placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
+                name="address" value={this.state.address} placeholder="Change question's area location" disabled={this.state.disabledAutocomplete} />
             </div>
           </div>
           <div className="columns small-4 text-left">
-            <button className="button warning" onClick={ this.updateCurrentLocation }>Update current location</button>
+            <button className="button warning" onClick={ this.updateCurrentLocation }>Update question&#145;s area</button>
           </div>
         </div>
 
+        <div className="row columns small-12 text-center">
+          <p>Questions are populated around this area: <strong>{ this.state.initializingUserLocation ? 'Finding your location...' : this.state.current_address}</strong></p>
+        </div>
+
         <table className="table table-striped">
-          <thead>
+
+          <thead className="table-questions-head">
             <th>Address</th>
             <th>Room</th>
             <th>Topic</th>
             <th>Description</th>
             <th>Action</th>
           </thead>
-          <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem }/>    
+          {(() => {
+            switch (this.state.tableStatus) {
+              case "initializing":  
+                return <tbody><tr><td className="full-td" colSpan="5"><h4>Finding people around you who needs your help...</h4></td></tr></tbody>;
+              case "empty":
+                return <tbody><tr><td className="full-td" colSpan="5"><h4>Nobody needs help right now around that area. Try again later or try another area.</h4></td></tr></tbody>;
+              case "success": 
+                return <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem }/>;
+              default:
+                return <tbody><tr><td className="full-td" colSpan="5"><h4>Something went wrong. Please refresh the page.</h4></td></tr></tbody>;
+            }
+          })()}
         </table>
 
         <div className="reveal small" id="post-question-form" data-reveal>

@@ -33,10 +33,10 @@ var ActionComponent = React.createClass({displayName: "ActionComponent",
       func = this.props.claimItem
       label = "button alert small";
     }
-    else if (status == "Finished"){
-      func = ""
-      text = "None"
-      label = "button secondary small disabled";
+    else if (status == "Unclaimed"){
+      text = "Claim"
+      func = this.props.claimItem
+      label = "button alert small";
     }
     else if (status == "In Progress"){
       text = "Finish"
@@ -105,7 +105,10 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       geolocation: {},
       room: '',
       disabledAutocomplete: false,
-      current_address: ''
+      current_address: '',
+      tableStatus: 'initializing',
+      initializingUserData: true,
+      initializingUserLocation: true
     }
     
   },
@@ -153,18 +156,12 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         that.setState({user_uid: user_uid});
         that.bindAsObject(that.firebaseRef.child("users").child(user_uid), 'current_user');
 
-
-        that.firebaseRef.child("users").child(user_uid).child('post').on("child_changed", function(snapshot, key) {
-          var posts = snapshot.val(); //this.current_user.post
-          console.log(posts);
-          console.log(key);
-        })
-
         that.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
           var userObject = dataSnapshot.val();
           if (userObject !== null) {
             that.setState({user_email: userObject.email});
             that.setState({user_limit: userObject.limit}); 
+            that.setState({initializingUserData: false});
           }
         });
 
@@ -199,6 +196,12 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             that.setState({items: newItems})
           }
 
+          if (_.isEmpty(that.state.items)) {
+            that.setState({tableStatus:"empty"});
+          } else {
+            that.setState({tableStatus:"success"});
+          }
+
         }
 
       })
@@ -210,6 +213,9 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       var newItems = that.state.items;
       delete newItems[itemKey];
       that.setState({items: newItems});
+      if (_.isEmpty(that.state.items)) {
+        that.setState({tableStatus:"empty"});
+      }
     });
   },
 
@@ -286,6 +292,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     if (this.state.address) {
       this.setState({current_address: this.state.address});
       this.setState({address: ''});
+      this.setState({initializingUserLocation: false});
     } else {
       var geocoder = new google.maps.Geocoder();
       var latLng = new google.maps.LatLng(this.state.geolocation.lat, this.state.geolocation.lng);
@@ -297,6 +304,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             that.setState({current_address: "Failed to locate your current location."});
             console.log("fail geocoding: " + status);
         }
+        that.setState({initializingUserLocation: false});
       });
     }
       
@@ -393,24 +401,29 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     this.questionForm.close();
   },
 
+  openPostQuestionForm: function() {
+    if (this.state.current_user.limit > 0) {
+      this.questionForm.open();
+    } else {
+      alert('Please wait for your questions to be answered.')
+    }
+  },
+
   render: function() {
 
     return (
       React.createElement("div", null, 
         React.createElement("div", {className: "row small-12 columns"}, 
           React.createElement("div", {className: "columns small-6"}, 
-            React.createElement("p", null, "Registered as: ", React.createElement("strong", null, this.state.user_email))
+            React.createElement("p", null,  this.state.initializingUserData ? 'Initializing data..' : 'Hi ' + this.state.current_user.name + '!'), 
+            React.createElement("p", null, "Logged In as: ", React.createElement("strong", null,  this.state.initializingUserData ? 'Initializing data..' : this.state.user_email))
           ), 
           React.createElement("div", {className: "columns small-6 text-center"}, 
-            React.createElement("div", {className: "button success", "data-open": "post-question-form"}, 
+            React.createElement("div", {className: "button success", onClick: this.openPostQuestionForm}, 
               React.createElement("i", {className: "fi-plus"}), " Post New Question"
             ), 
-            React.createElement("p", null, "Post limit: ", React.createElement("strong", null, this.state.current_user.limit))
+            React.createElement("p", null, "Post limit: ", React.createElement("strong", null,  this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.limit))
           )
-        ), 
-
-        React.createElement("div", {className: "row columns small-12 text-center"}, 
-          React.createElement("p", null, "Your current location is: ", React.createElement("strong", null, this.state.current_address))
         ), 
 
         React.createElement("div", {className: "row columns small-12 text-center"}, 
@@ -418,23 +431,39 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             React.createElement("div", {className: "input-group"}, 
               React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
                 React.createElement("input", {className: "input-group-field", onChange:  this.onChange, type: "text", id: "current_address", ref: "current_address_autocomplete", 
-                name: "address", value: this.state.address, placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
+                name: "address", value: this.state.address, placeholder: "Change question's area location", disabled: this.state.disabledAutocomplete})
             )
           ), 
           React.createElement("div", {className: "columns small-4 text-left"}, 
-            React.createElement("button", {className: "button warning", onClick:  this.updateCurrentLocation}, "Update current location")
+            React.createElement("button", {className: "button warning", onClick:  this.updateCurrentLocation}, "Update questions area")
           )
         ), 
 
+        React.createElement("div", {className: "row columns small-12 text-center"}, 
+          React.createElement("p", null, "Questions are populated around this area: ", React.createElement("strong", null,  this.state.initializingUserLocation ? 'Finding your location...' : this.state.current_address))
+        ), 
+
         React.createElement("table", {className: "table table-striped"}, 
-          React.createElement("thead", null, 
+
+          React.createElement("thead", {className: "table-questions-head"}, 
             React.createElement("th", null, "Address"), 
             React.createElement("th", null, "Room"), 
             React.createElement("th", null, "Topic"), 
             React.createElement("th", null, "Description"), 
             React.createElement("th", null, "Action")
           ), 
-          React.createElement(QuestionPost, {items:  this.state.items, claimItem:  this.claimItem, finishItem:  this.finishItem})
+          (() => {
+            switch (this.state.tableStatus) {
+              case "initializing":  
+                return React.createElement("tbody", null, React.createElement("tr", null, React.createElement("td", {className: "full-td", colSpan: "5"}, React.createElement("h4", null, "Finding people around you who needs your help..."))));
+              case "empty":
+                return React.createElement("tbody", null, React.createElement("tr", null, React.createElement("td", {className: "full-td", colSpan: "5"}, React.createElement("h4", null, "Nobody needs help right now around that area. Try again later or try another area."))));
+              case "success": 
+                return React.createElement(QuestionPost, {items:  this.state.items, claimItem:  this.claimItem, finishItem:  this.finishItem});
+              default:
+                return React.createElement("tbody", null, React.createElement("tr", null, React.createElement("td", {className: "full-td", colSpan: "5"}, React.createElement("h4", null, "Something went wrong. Please refresh the page."))));
+            }
+          })()
         ), 
 
         React.createElement("div", {className: "reveal small", id: "post-question-form", "data-reveal": true}, 

@@ -66,22 +66,24 @@ tr:after {
     clear: both;
 }
 
-thead th {
-    height: 30px;
-
-    /*text-align: left;*/
-}
-
 tbody {
     min-height: 10vh;
     max-height: 60vh;
     overflow-y: auto;
 }
 
+.table-questions-head th{
+  text-align: center;
+}
+
 
 tbody td, thead th {
-    width: 20%;
-    float: left;
+  width: 16.667%;
+  float: left;
+}
+
+.full-td {
+  width: 100%;
 }
 
 ::-webkit-scrollbar {
