@@ -51,7 +51,7 @@ var LoginForm = React.createClass({
         });
       } else {
         this.firebaseRef.unauth();
-        console.log("Must use Illinois email");
+        console.log("Please allow email access/Must use Illinois email");
       }
     } else {
       console.log("Auth data not found");
@@ -86,7 +86,7 @@ var LoginForm = React.createClass({
 
     return (
       <div className="row">
-          <div className="medium-6 medium-centered large-4 large-centered columns">
+          <div className="medium-8 medium-centered large-6 large-centered columns">
             <h2>Charma</h2>
             <h4>Give help, get help</h4>
             <h6>There must be somebody else in Grainger who has solved that question on your homework. So, why don't we give each other a hand?</h6>

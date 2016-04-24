@@ -20,38 +20,6 @@ var StatusAlert = React.createClass({
   }
 });
 
-var FilterButtons = React.createClass({
-  render: function(props) {
-    var _this = this
-    var filter_status = _this.props.filter_status;
-
-    var disabledU = ''
-    var disabledA = ''
-    var disabledIP = ''
-    var disabledF = ''
-    if (filter_status == "Unclaimed"){
-      disabledU = "disabled";
-    }
-    else if (filter_status == "Finished"){
-      disabledF = "disabled";
-    }
-    else if (filter_status == "In Progress"){
-      disabledIP = "disabled";
-    }
-    else if (filter_status == "all"){
-      disabledA = "disabled";
-    }
-    return (
-      <div>
-        <a className={'button ' + disabledF} onClick={_this.props.clickF}>Finished</a>
-        <a className={'button ' + disabledU} onClick={_this.props.clickU}>Unclaimed</a>
-        <a className={"button " + disabledIP} onClick={_this.props.clickIP}>In Progress</a>
-        <a className={"button " + disabledA} onClick={_this.props.clickA}>ALL</a>
-      </div>
-    );
-  }
-});
-
 
 var ActionComponent = React.createClass({
   render: function(props) {
@@ -96,14 +64,13 @@ var QuestionPost = React.createClass({
     }
 
     var createItem = function(item, key) {
-      if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
+      if (item.status){
         return (
           <tr key={ key }>
             <td>{item.address}</td>
             <td>{item.room}</td>
             <td>{item.topic}</td>
             <td>{item.description}</td>
-            <td><StatusAlert status={item.status}/></td>
             <td>
               <ActionComponent status={item.status} claimItem={ _this.props.claimItem.bind(null, key) } finishItem = { _this.props.finishItem.bind(null, key) } />
             </td>
@@ -128,7 +95,6 @@ var ListQuestions = React.createClass({
       user_uid: '',
       user_emaul: '',
       user_limit: '',
-      status_filter: 'all',
       current_user: '',
       items:{},
       address: '',
@@ -138,7 +104,7 @@ var ListQuestions = React.createClass({
       geolocation: {},
       room: '',
       disabledAutocomplete: false,
-      currentGeolocation: {}
+      current_address: ''
     }
     
   },
@@ -148,31 +114,31 @@ var ListQuestions = React.createClass({
     // location types.
 
     var that = this;
+    this.autocomplete = {};
 
-    autocomplete = new google.maps.places.Autocomplete(
-        /** @type {!HTMLInputElement} */(this.refs.autocomplete),
-        {types: ['geocode']});
+    [this.refs.post_question_autocomplete, this.refs.current_address_autocomplete].forEach(function (autocompleteRef) {
+      that.autocomplete[autocompleteRef.id] = new google.maps.places.Autocomplete(autocompleteRef,{types: ['geocode']});
 
-    google.maps.event.addDomListener(this.refs.autocomplete, 'keydown', function(e) { 
-        if (e.keyCode == 13 && $('.pac-container:visible').length) { 
-            e.preventDefault(); 
-        }
-    }); 
-
-    autocomplete.addListener('place_changed', function() {
-      var place = autocomplete.getPlace();
-      that.setState({
-        address: place.formatted_address,
-        geolocation: {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng()
-        }
+      google.maps.event.addDomListener(autocompleteRef, 'keydown', function(e) { 
+          if (e.keyCode == 13 && $('.pac-container:visible').length) { 
+              e.preventDefault(); 
+          }
       });
-      that.geoQuery.updateCriteria({
-        center: [place.geometry.location.lat(), place.geometry.location.lng()],
-        radius: 1
+
+
+      that.autocomplete[autocompleteRef.id].addListener('place_changed', function() {
+        var place = that.autocomplete[autocompleteRef.id].getPlace();
+        that.setState({
+          address: place.formatted_address,
+          geolocation: {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          }
+        });
       });
+
     });
+
   },
 
 
@@ -185,6 +151,13 @@ var ListQuestions = React.createClass({
         var user_uid = authData.uid;
         that.setState({user_uid: user_uid});
         that.bindAsObject(that.firebaseRef.child("users").child(user_uid), 'current_user');
+
+
+        that.firebaseRef.child("users").child(user_uid).child('post').on("child_changed", function(snapshot, key) {
+          var posts = snapshot.val(); //this.current_user.post
+          console.log(posts);
+          console.log(key);
+        })
 
         that.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
           var userObject = dataSnapshot.val();
@@ -207,17 +180,26 @@ var ListQuestions = React.createClass({
       radius: 0
     });
 
-    this.geolocate();
+    this.geolocate(this.updateCurrentLocation);
 
     this.geoQuery.on("key_entered", function(itemKey) {
       itemKey = itemKey.split(":")[1];
       that.firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
         var question = dataSnapshot.val();
-        var newItems = that.state.items;
-        newItems[itemKey] = question;
-        if (question !== null) {
-          that.setState({items: newItems})
+
+        if (question !== null){
+          var newItems = that.state.items;
+
+          if (question.status === 'Unclaimed') {
+            newItems[itemKey] = question;
+            that.setState({items: newItems})
+          } else if (itemKey in newItems){
+            delete newItems[itemKey]
+            that.setState({items: newItems})
+          }
+
         }
+
       })
     });
 
@@ -232,6 +214,7 @@ var ListQuestions = React.createClass({
 
   componentDidMount: function() { 
     this.initAutocomplete();
+    this.questionForm = new Foundation.Reveal($("#post-question-form"));
   },
   
   onChange: function(e) {
@@ -278,18 +261,44 @@ var ListQuestions = React.createClass({
             lng: position.coords.longitude
           }
         });
-        that.geoQuery.updateCriteria({
-          center: [position.coords.latitude, position.coords.longitude],
-          radius: 1
-        });
         var circle = new google.maps.Circle({
           center: that.state.geolocation,
           radius: position.coords.accuracy
         });
-        autocomplete.setBounds(circle.getBounds());
+        _.forEach(that.autocomplete, function (autocomplete) {
+          autocomplete.setBounds(circle.getBounds());
+        });
         typeof callback === 'function' && callback();
       });
     }
+  },
+
+  updateCurrentLocation: function() {
+    var that = this;
+
+    this.geoQuery.updateCriteria({
+      center: [this.state.geolocation.lat, this.state.geolocation.lng],
+      radius: 1
+    });
+
+    // update current address using address from the field if available
+    if (this.state.address) {
+      this.setState({current_address: this.state.address});
+      this.setState({address: ''});
+    } else {
+      var geocoder = new google.maps.Geocoder();
+      var latLng = new google.maps.LatLng(this.state.geolocation.lat, this.state.geolocation.lng);
+      geocoder.geocode( { 'location': latLng}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK && results[0]) {
+            that.setState({current_address:results[0].formatted_address});
+            that.setState({address: ''});
+        } else {
+            that.setState({current_address: "Failed to locate your current location."});
+            console.log("fail geocoding: " + status);
+        }
+      });
+    }
+      
   },
 
   fillAddressFromGeolocate: function(e) {
@@ -302,29 +311,21 @@ var ListQuestions = React.createClass({
     var mainMethod = function() {
       var geocoder = new google.maps.Geocoder();
       var latLng = new google.maps.LatLng(that.state.geolocation.lat, that.state.geolocation.lng);
+
       geocoder.geocode( { 'location': latLng}, function(results, status) {
         that.setState({disabledAutocomplete: false});
-        if (status == google.maps.GeocoderStatus.OK) {
-          if (results[0]) {
+        if (status == google.maps.GeocoderStatus.OK && results[0]) {
             that.setState({address:results[0].formatted_address});
-          }
         } else {
+            that.setState({address: "Failed to locate your current location."});
             console.log("fail geocoding: " + status);
         }
-
-
       });
+
     }
 
     this.geolocate(mainMethod);
     
-    // if (!this.state.geolocation || $.isEmptyObject(this.state.geolocation)) {
-    //   console.log('this')
-    //   this.geolocate(mainMethod);
-    // }
-    // else {
-    //   mainMethod();
-    // }
   },
 
   handleClickPlace: function(place, e) {
@@ -342,6 +343,7 @@ var ListQuestions = React.createClass({
 
   handleSubmit: function(e) {
     e.preventDefault();
+    var that = this;
 
     if (this.state.current_user.limit > 0 && this.state.address && this.state.address.trim().length !== 0) {
       this.firebaseRef.child("users").child(this.state.user_uid).child('limit').transaction(function(current_value){
@@ -377,71 +379,102 @@ var ListQuestions = React.createClass({
         status: 'Unclaimed',
         description: ''
       });
+
+      that.closePostQuestionForm();
+      window.location = "/history";
     }
     else{
         alert('Please wait for your questions to be answered.')
     }
   },
-  statusfilterF: function(e){
-    this.setState({status_filter:'Finished'})
+
+  closePostQuestionForm: function() {
+    this.questionForm.close();
   },
-  statusfilterU: function(e){
-    this.setState({status_filter:'Unclaimed'})
-  },
-  statusfilterIP: function(e){
-    this.setState({status_filter:'In Progress'})
-  },
-  statusfilterA: function(e){
-    this.setState({status_filter:'all'})
-  },
+
   render: function() {
 
     return (
       <div>
-      <p>Registered as: {this.state.user_email}</p>
-      <p>Post limit: {this.state.current_user.limit}</p>
-        <FilterButtons filter_status={this.state.status_filter} clickF={this.statusfilterF} clickU={this.statusfilterU} clickIP={this.statusfilterIP} clickA={this.statusfilterA} />
+        <div className="row small-12 columns">
+          <div className="columns small-6">
+            <p>Registered as: <strong>{this.state.user_email}</strong></p>
+          </div>
+          <div className="columns small-6 text-center">
+            <div className="button success" data-open="post-question-form">
+              <i className="fi-plus"></i> Post New Question
+            </div>
+            <p>Post limit: <strong>{this.state.current_user.limit}</strong></p>
+          </div>
+        </div>
+
+        <div className="row columns small-12 text-center">
+          <p>Your current location is: <strong>{this.state.current_address}</strong></p>
+        </div>
+
+        <div className="row columns small-12 text-center">
+          <div className="columns small-8">
+            <div className="input-group">
+              <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
+                <input className="input-group-field" onChange={ this.onChange } type="text" id="current_address" ref="current_address_autocomplete"  
+                name="address" value={this.state.address} placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
+            </div>
+          </div>
+          <div className="columns small-4 text-left">
+            <button className="button warning" onClick={ this.updateCurrentLocation }>Update current location</button>
+          </div>
+        </div>
+
         <table className="table table-striped">
           <thead>
             <th>Address</th>
             <th>Room</th>
             <th>Topic</th>
             <th>Description</th>
-            <th>Status</th>
             <th>Action</th>
           </thead>
-          <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem } statusFilter={this.state.status_filter}/>    
+          <QuestionPost items={ this.state.items } claimItem={ this.claimItem } finishItem={ this.finishItem }/>    
         </table>
-        <form onSubmit={this.handleSubmit}>
-          <div className="row column log-in-form">
-              <h4 className="text-center">Post New Question</h4>
-              <label>Type in your address/building name
-              <div className="input-group">
-                <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
-                  <input className="input-group-field" type="text" id="building" ref="autocomplete" onChange={ this.onChange }  value={ this.state.address } name="address" placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
-              </div>
-              <div>
-                or pick from these popular places:&nbsp;
-                {this.props.savedPlaces.map(function(item, i) {
-                  return (
-                      <a className="button hollow small default" onClick={ this.handleClickPlace.bind(null, item) } >{item.name}</a>
-                  );
-                }.bind(this))}
-              </div>
 
-              </label>
-              <label>Room/area
-                  <input type="text" id="room" onChange={ this.onChange } value={ this.state.room } name="room" placeholder="1234"/>
-              </label>
-              <label>Topic
-                  <input type="text" id="topic" onChange={ this.onChange } value={ this.state.topic } name="topic" placeholder="Topic"/>
-              </label>
-              <label>Description
-                  <input type="text" id="description" onChange={ this.onChange } value={ this.state.description } name="description" placeholder="Brief description" />
-              </label>
-              <button type="submit" className="button success expanded" value="Submit">Submit</button>
-          </div>
-        </form>
+        <div className="reveal small" id="post-question-form" data-reveal>
+
+          <a className="float-right" onClick={ this.closePostQuestionForm }>
+            <span aria-hidden="true"><i className="fi-x"></i></span>
+          </a>
+
+          <form onSubmit={this.handleSubmit}>
+            <div className="row column log-in-form">
+                <h4 className="text-center">Post New Question</h4>
+                <label>Type in your address/building name
+                <div className="input-group">
+                  <span className="input-group-label" onClick= { this.fillAddressFromGeolocate } ><i className="fi-marker"></i></span>
+                    <input className="input-group-field" type="text" id="building" ref="post_question_autocomplete" onChange={ this.onChange }
+                    value={ this.state.address } name="address" placeholder="Address/Place" disabled={this.state.disabledAutocomplete} />
+                </div>
+                <div>
+                  or pick from these popular places:&nbsp;
+                  {this.props.savedPlaces.map(function(item, i) {
+                    return (
+                        <a className="button hollow small default" onClick={ this.handleClickPlace.bind(null, item) } >{item.name}</a>
+                    );
+                  }.bind(this))}
+                </div>
+
+                </label>
+                <label>Room/area
+                    <input type="text" id="room" onChange={ this.onChange } value={ this.state.room } name="room" placeholder="1234"/>
+                </label>
+                <label>Topic
+                    <input type="text" id="topic" onChange={ this.onChange } value={ this.state.topic } name="topic" placeholder="Topic"/>
+                </label>
+                <label>Description
+                    <input type="text" id="description" onChange={ this.onChange } value={ this.state.description } name="description" placeholder="Brief description" />
+                </label>
+                <button type="submit" data-close className="button success expanded" value="Submit">Submit</button>
+            </div>
+          </form>
+        </div>
+
       </div>
     );
   }
@@ -478,23 +511,4 @@ var savedPlaces = [
 React.render(
   <ListQuestions savedPlaces={savedPlaces} />,
   document.getElementById('main')
-);
-
-
-var Logout = React.createClass({
-  logout :function(){
-    var ref = new Firebase("https://karmadb.firebaseio.com");
-    ref.unauth()
-  },
-  render: function(props) {
-    return (
-        <button onClick={this.logout} className="button alert">Logout</button>
-    );
-  }
-});
-
-
-React.render(
-  <Logout/>,
-  document.getElementById('logout')
 );

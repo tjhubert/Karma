@@ -21,38 +21,6 @@ var StatusAlert = React.createClass({displayName: "StatusAlert",
   }
 });
 
-var FilterButtons = React.createClass({displayName: "FilterButtons",
-  render: function(props) {
-    var _this = this
-    var filter_status = _this.props.filter_status;
-
-    var disabledU = ''
-    var disabledA = ''
-    var disabledIP = ''
-    var disabledF = ''
-    if (filter_status == "Unclaimed"){
-      disabledU = "disabled";
-    }
-    else if (filter_status == "Finished"){
-      disabledF = "disabled";
-    }
-    else if (filter_status == "In Progress"){
-      disabledIP = "disabled";
-    }
-    else if (filter_status == "all"){
-      disabledA = "disabled";
-    }
-    return (
-      React.createElement("div", null, 
-        React.createElement("a", {className: 'button ' + disabledF, onClick: _this.props.clickF}, "Finished"), 
-        React.createElement("a", {className: 'button ' + disabledU, onClick: _this.props.clickU}, "Unclaimed"), 
-        React.createElement("a", {className: "button " + disabledIP, onClick: _this.props.clickIP}, "In Progress"), 
-        React.createElement("a", {className: "button " + disabledA, onClick: _this.props.clickA}, "ALL")
-      )
-    );
-  }
-});
-
 
 var ActionComponent = React.createClass({displayName: "ActionComponent",
   render: function(props) {
@@ -97,14 +65,13 @@ var QuestionPost = React.createClass({displayName: "QuestionPost",
     }
 
     var createItem = function(item, key) {
-      if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
+      if (item.status){
         return (
           React.createElement("tr", {key:  key }, 
             React.createElement("td", null, item.address), 
             React.createElement("td", null, item.room), 
             React.createElement("td", null, item.topic), 
             React.createElement("td", null, item.description), 
-            React.createElement("td", null, React.createElement(StatusAlert, {status: item.status})), 
             React.createElement("td", null, 
               React.createElement(ActionComponent, {status: item.status, claimItem:  _this.props.claimItem.bind(null, key), finishItem:  _this.props.finishItem.bind(null, key) })
             )
@@ -129,7 +96,6 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       user_uid: '',
       user_emaul: '',
       user_limit: '',
-      status_filter: 'all',
       current_user: '',
       items:{},
       address: '',
@@ -139,7 +105,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       geolocation: {},
       room: '',
       disabledAutocomplete: false,
-      currentGeolocation: {}
+      current_address: ''
     }
     
   },
@@ -149,31 +115,31 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     // location types.
 
     var that = this;
+    this.autocomplete = {};
 
-    autocomplete = new google.maps.places.Autocomplete(
-        /** @type {!HTMLInputElement} */(this.refs.autocomplete),
-        {types: ['geocode']});
+    [this.refs.post_question_autocomplete, this.refs.current_address_autocomplete].forEach(function (autocompleteRef) {
+      that.autocomplete[autocompleteRef.id] = new google.maps.places.Autocomplete(autocompleteRef,{types: ['geocode']});
 
-    google.maps.event.addDomListener(this.refs.autocomplete, 'keydown', function(e) { 
-        if (e.keyCode == 13 && $('.pac-container:visible').length) { 
-            e.preventDefault(); 
-        }
-    }); 
-
-    autocomplete.addListener('place_changed', function() {
-      var place = autocomplete.getPlace();
-      that.setState({
-        address: place.formatted_address,
-        geolocation: {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng()
-        }
+      google.maps.event.addDomListener(autocompleteRef, 'keydown', function(e) { 
+          if (e.keyCode == 13 && $('.pac-container:visible').length) { 
+              e.preventDefault(); 
+          }
       });
-      that.geoQuery.updateCriteria({
-        center: [place.geometry.location.lat(), place.geometry.location.lng()],
-        radius: 1
+
+
+      that.autocomplete[autocompleteRef.id].addListener('place_changed', function() {
+        var place = that.autocomplete[autocompleteRef.id].getPlace();
+        that.setState({
+          address: place.formatted_address,
+          geolocation: {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          }
+        });
       });
+
     });
+
   },
 
 
@@ -186,6 +152,13 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         var user_uid = authData.uid;
         that.setState({user_uid: user_uid});
         that.bindAsObject(that.firebaseRef.child("users").child(user_uid), 'current_user');
+
+
+        that.firebaseRef.child("users").child(user_uid).child('post').on("child_changed", function(snapshot, key) {
+          var posts = snapshot.val(); //this.current_user.post
+          console.log(posts);
+          console.log(key);
+        })
 
         that.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
           var userObject = dataSnapshot.val();
@@ -208,17 +181,26 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       radius: 0
     });
 
-    this.geolocate();
+    this.geolocate(this.updateCurrentLocation);
 
     this.geoQuery.on("key_entered", function(itemKey) {
       itemKey = itemKey.split(":")[1];
       that.firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
         var question = dataSnapshot.val();
-        var newItems = that.state.items;
-        newItems[itemKey] = question;
-        if (question !== null) {
-          that.setState({items: newItems})
+
+        if (question !== null){
+          var newItems = that.state.items;
+
+          if (question.status === 'Unclaimed') {
+            newItems[itemKey] = question;
+            that.setState({items: newItems})
+          } else if (itemKey in newItems){
+            delete newItems[itemKey]
+            that.setState({items: newItems})
+          }
+
         }
+
       })
     });
 
@@ -233,6 +215,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
   componentDidMount: function() { 
     this.initAutocomplete();
+    this.questionForm = new Foundation.Reveal($("#post-question-form"));
   },
   
   onChange: function(e) {
@@ -279,18 +262,44 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             lng: position.coords.longitude
           }
         });
-        that.geoQuery.updateCriteria({
-          center: [position.coords.latitude, position.coords.longitude],
-          radius: 1
-        });
         var circle = new google.maps.Circle({
           center: that.state.geolocation,
           radius: position.coords.accuracy
         });
-        autocomplete.setBounds(circle.getBounds());
+        _.forEach(that.autocomplete, function (autocomplete) {
+          autocomplete.setBounds(circle.getBounds());
+        });
         typeof callback === 'function' && callback();
       });
     }
+  },
+
+  updateCurrentLocation: function() {
+    var that = this;
+
+    this.geoQuery.updateCriteria({
+      center: [this.state.geolocation.lat, this.state.geolocation.lng],
+      radius: 1
+    });
+
+    // update current address using address from the field if available
+    if (this.state.address) {
+      this.setState({current_address: this.state.address});
+      this.setState({address: ''});
+    } else {
+      var geocoder = new google.maps.Geocoder();
+      var latLng = new google.maps.LatLng(this.state.geolocation.lat, this.state.geolocation.lng);
+      geocoder.geocode( { 'location': latLng}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK && results[0]) {
+            that.setState({current_address:results[0].formatted_address});
+            that.setState({address: ''});
+        } else {
+            that.setState({current_address: "Failed to locate your current location."});
+            console.log("fail geocoding: " + status);
+        }
+      });
+    }
+      
   },
 
   fillAddressFromGeolocate: function(e) {
@@ -303,29 +312,21 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     var mainMethod = function() {
       var geocoder = new google.maps.Geocoder();
       var latLng = new google.maps.LatLng(that.state.geolocation.lat, that.state.geolocation.lng);
+
       geocoder.geocode( { 'location': latLng}, function(results, status) {
         that.setState({disabledAutocomplete: false});
-        if (status == google.maps.GeocoderStatus.OK) {
-          if (results[0]) {
+        if (status == google.maps.GeocoderStatus.OK && results[0]) {
             that.setState({address:results[0].formatted_address});
-          }
         } else {
+            that.setState({address: "Failed to locate your current location."});
             console.log("fail geocoding: " + status);
         }
-
-
       });
+
     }
 
     this.geolocate(mainMethod);
     
-    // if (!this.state.geolocation || $.isEmptyObject(this.state.geolocation)) {
-    //   console.log('this')
-    //   this.geolocate(mainMethod);
-    // }
-    // else {
-    //   mainMethod();
-    // }
   },
 
   handleClickPlace: function(place, e) {
@@ -343,6 +344,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
   handleSubmit: function(e) {
     e.preventDefault();
+    var that = this;
 
     if (this.state.current_user.limit > 0 && this.state.address && this.state.address.trim().length !== 0) {
       this.firebaseRef.child("users").child(this.state.user_uid).child('limit').transaction(function(current_value){
@@ -378,71 +380,102 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         status: 'Unclaimed',
         description: ''
       });
+
+      that.closePostQuestionForm();
+      window.location = "/history";
     }
     else{
         alert('Please wait for your questions to be answered.')
     }
   },
-  statusfilterF: function(e){
-    this.setState({status_filter:'Finished'})
+
+  closePostQuestionForm: function() {
+    this.questionForm.close();
   },
-  statusfilterU: function(e){
-    this.setState({status_filter:'Unclaimed'})
-  },
-  statusfilterIP: function(e){
-    this.setState({status_filter:'In Progress'})
-  },
-  statusfilterA: function(e){
-    this.setState({status_filter:'all'})
-  },
+
   render: function() {
 
     return (
       React.createElement("div", null, 
-      React.createElement("p", null, "Registered as: ", this.state.user_email), 
-      React.createElement("p", null, "Post limit: ", this.state.current_user.limit), 
-        React.createElement(FilterButtons, {filter_status: this.state.status_filter, clickF: this.statusfilterF, clickU: this.statusfilterU, clickIP: this.statusfilterIP, clickA: this.statusfilterA}), 
+        React.createElement("div", {className: "row small-12 columns"}, 
+          React.createElement("div", {className: "columns small-6"}, 
+            React.createElement("p", null, "Registered as: ", React.createElement("strong", null, this.state.user_email))
+          ), 
+          React.createElement("div", {className: "columns small-6 text-center"}, 
+            React.createElement("div", {className: "button success", "data-open": "post-question-form"}, 
+              React.createElement("i", {className: "fi-plus"}), " Post New Question"
+            ), 
+            React.createElement("p", null, "Post limit: ", React.createElement("strong", null, this.state.current_user.limit))
+          )
+        ), 
+
+        React.createElement("div", {className: "row columns small-12 text-center"}, 
+          React.createElement("p", null, "Your current location is: ", React.createElement("strong", null, this.state.current_address))
+        ), 
+
+        React.createElement("div", {className: "row columns small-12 text-center"}, 
+          React.createElement("div", {className: "columns small-8"}, 
+            React.createElement("div", {className: "input-group"}, 
+              React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
+                React.createElement("input", {className: "input-group-field", onChange:  this.onChange, type: "text", id: "current_address", ref: "current_address_autocomplete", 
+                name: "address", value: this.state.address, placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
+            )
+          ), 
+          React.createElement("div", {className: "columns small-4 text-left"}, 
+            React.createElement("button", {className: "button warning", onClick:  this.updateCurrentLocation}, "Update current location")
+          )
+        ), 
+
         React.createElement("table", {className: "table table-striped"}, 
           React.createElement("thead", null, 
             React.createElement("th", null, "Address"), 
             React.createElement("th", null, "Room"), 
             React.createElement("th", null, "Topic"), 
             React.createElement("th", null, "Description"), 
-            React.createElement("th", null, "Status"), 
             React.createElement("th", null, "Action")
           ), 
-          React.createElement(QuestionPost, {items:  this.state.items, claimItem:  this.claimItem, finishItem:  this.finishItem, statusFilter: this.state.status_filter})
+          React.createElement(QuestionPost, {items:  this.state.items, claimItem:  this.claimItem, finishItem:  this.finishItem})
         ), 
-        React.createElement("form", {onSubmit: this.handleSubmit}, 
-          React.createElement("div", {className: "row column log-in-form"}, 
-              React.createElement("h4", {className: "text-center"}, "Post New Question"), 
-              React.createElement("label", null, "Type in your address/building name", 
-              React.createElement("div", {className: "input-group"}, 
-                React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
-                  React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "autocomplete", onChange:  this.onChange, value:  this.state.address, name: "address", placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
-              ), 
-              React.createElement("div", null, 
-                "or pick from these popular places: ", 
-                this.props.savedPlaces.map(function(item, i) {
-                  return (
-                      React.createElement("a", {className: "button hollow small default", onClick:  this.handleClickPlace.bind(null, item) }, item.name)
-                  );
-                }.bind(this))
-              )
 
-              ), 
-              React.createElement("label", null, "Room/area", 
-                  React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "1234"})
-              ), 
-              React.createElement("label", null, "Topic", 
-                  React.createElement("input", {type: "text", id: "topic", onChange:  this.onChange, value:  this.state.topic, name: "topic", placeholder: "Topic"})
-              ), 
-              React.createElement("label", null, "Description", 
-                  React.createElement("input", {type: "text", id: "description", onChange:  this.onChange, value:  this.state.description, name: "description", placeholder: "Brief description"})
-              ), 
-              React.createElement("button", {type: "submit", className: "button success expanded", value: "Submit"}, "Submit")
+        React.createElement("div", {className: "reveal small", id: "post-question-form", "data-reveal": true}, 
+
+          React.createElement("a", {className: "float-right", onClick:  this.closePostQuestionForm}, 
+            React.createElement("span", {"aria-hidden": "true"}, React.createElement("i", {className: "fi-x"}))
+          ), 
+
+          React.createElement("form", {onSubmit: this.handleSubmit}, 
+            React.createElement("div", {className: "row column log-in-form"}, 
+                React.createElement("h4", {className: "text-center"}, "Post New Question"), 
+                React.createElement("label", null, "Type in your address/building name", 
+                React.createElement("div", {className: "input-group"}, 
+                  React.createElement("span", {className: "input-group-label", onClick:  this.fillAddressFromGeolocate}, React.createElement("i", {className: "fi-marker"})), 
+                    React.createElement("input", {className: "input-group-field", type: "text", id: "building", ref: "post_question_autocomplete", onChange:  this.onChange, 
+                    value:  this.state.address, name: "address", placeholder: "Address/Place", disabled: this.state.disabledAutocomplete})
+                ), 
+                React.createElement("div", null, 
+                  "or pick from these popular places: ", 
+                  this.props.savedPlaces.map(function(item, i) {
+                    return (
+                        React.createElement("a", {className: "button hollow small default", onClick:  this.handleClickPlace.bind(null, item) }, item.name)
+                    );
+                  }.bind(this))
+                )
+
+                ), 
+                React.createElement("label", null, "Room/area", 
+                    React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "1234"})
+                ), 
+                React.createElement("label", null, "Topic", 
+                    React.createElement("input", {type: "text", id: "topic", onChange:  this.onChange, value:  this.state.topic, name: "topic", placeholder: "Topic"})
+                ), 
+                React.createElement("label", null, "Description", 
+                    React.createElement("input", {type: "text", id: "description", onChange:  this.onChange, value:  this.state.description, name: "description", placeholder: "Brief description"})
+                ), 
+                React.createElement("button", {type: "submit", "data-close": true, className: "button success expanded", value: "Submit"}, "Submit")
+            )
           )
         )
+
       )
     );
   }
@@ -481,23 +514,5 @@ React.render(
   document.getElementById('main')
 );
 
-
-var Logout = React.createClass({displayName: "Logout",
-  logout :function(){
-    var ref = new Firebase("https://karmadb.firebaseio.com");
-    ref.unauth()
-  },
-  render: function(props) {
-    return (
-        React.createElement("button", {onClick: this.logout, className: "button alert"}, "Logout")
-    );
-  }
-});
-
-
-React.render(
-  React.createElement(Logout, null),
-  document.getElementById('logout')
-);
 
 },{}]},{},[1])

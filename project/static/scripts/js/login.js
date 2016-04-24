@@ -52,7 +52,7 @@ var LoginForm = React.createClass({displayName: "LoginForm",
         });
       } else {
         this.firebaseRef.unauth();
-        console.log("Must use Illinois email");
+        console.log("Please allow email access/Must use Illinois email");
       }
     } else {
       console.log("Auth data not found");
@@ -87,7 +87,7 @@ var LoginForm = React.createClass({displayName: "LoginForm",
 
     return (
       React.createElement("div", {className: "row"}, 
-          React.createElement("div", {className: "medium-6 medium-centered large-4 large-centered columns"}, 
+          React.createElement("div", {className: "medium-8 medium-centered large-6 large-centered columns"}, 
             React.createElement("h2", null, "Charma"), 
             React.createElement("h4", null, "Give help, get help"), 
             React.createElement("h6", null, "There must be somebody else in Grainger who has solved that question on your homework. So, why don't we give each other a hand?")

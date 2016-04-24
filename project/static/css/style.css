@@ -6,6 +6,10 @@
   max-width: 300px;
 }
 
+#charma-title {
+  color: black;
+}
+
 input{
   text-align: center;
   border: 5px solid;
@@ -39,4 +43,53 @@ td .button{
 
 .status-warning {
   color: orange
+}
+
+.pac-container {
+  z-index: 1007;
+}
+
+#main {
+  margin-top: 20px;
+}
+
+table {
+        width: 100%;
+    }
+
+thead, tbody, tr, td, th { display: block; }
+
+tr:after {
+    content: ' ';
+    display: block;
+    visibility: hidden;
+    clear: both;
+}
+
+thead th {
+    height: 30px;
+
+    /*text-align: left;*/
+}
+
+tbody {
+    min-height: 10vh;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+
+tbody td, thead th {
+    width: 20%;
+    float: left;
+}
+
+::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0,0,0,.5);
+    -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
 }

@@ -126,8 +126,8 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       }
     });
 
-    var firebaseref = new Firebase("https://karmadb.firebaseio.com/user");
-    firebaseref.child(user_uid).once("value", function(dataSnapshot) {
+    this.firebaseRef = new Firebase("https://karmadb.firebaseio.com/");
+    this.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
       user_email_auth = dataSnapshot.child('email').val();
       that.setState({user_email:user_email_auth})
     })
@@ -144,8 +144,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   },
   
   componentWillMount: function() {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/user/');
-    this.bindAsArray(firebaseRef.child(this.state.user_uid).child('post').limitToLast(25), 'items');
+    this.bindAsArray(this.firebaseRef.child("users").child(this.state.user_uid).child('post').limitToLast(25), 'items');
   },
 
   onChange: function(e) {
@@ -154,27 +153,25 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   },
 
   claimItem: function(key) {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/');
     var author_uid;
-    firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
+    this.firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
       author_uid = dataSnapshot.child('author_uid').val();
       email = dataSnapshot.child('author_email').val();
     })
 
-    firebaseRef.child('items').child(key).update({status: 'In Progress'});
-    firebaseRef.child('user').child(author_uid).child('post').child(key).update({status: 'In Progress'});
+    this.firebaseRef.child('items').child(key).update({status: 'In Progress'});
+    this.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'In Progress'});
   },
 
   finishItem: function(key) {
-    var firebaseRef = new Firebase('https://karmadb.firebaseio.com/');
     var author_uid;
-    firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
+    this.firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
       author_uid = dataSnapshot.child('author_uid').val();
       email = dataSnapshot.child('author_email').val();
     })
 
-    firebaseRef.child('items').child(key).update({status: 'Finished'});
-    firebaseRef.child('user').child(author_uid).child('post').child(key).update({status: 'Finished'});
+    this.firebaseRef.child('items').child(key).update({status: 'Finished'});
+    this.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'Finished'});
   },
 
   handleSubmit: function(e) {
@@ -191,8 +188,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
       });
       var new_post_id = id.key()
-      var firebaseRef = new Firebase('https://karmadb.firebaseio.com/user/');
-      firebaseRef.child(this.state.user_uid).child('post').child(new_post_id).set({
+      this.firebaseRef.child("users").child(this.state.user_uid).child('post').child(new_post_id).set({
         location: this.state.location,
         topic: this.state.topic,
         status: 'Unclaimed',
