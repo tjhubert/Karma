@@ -19,26 +19,18 @@ app = Flask(__name__)
 app.secret_key = 'F12Zr47j\3yX R~X@H!jmM]Lwf/,?KT'
 firebase = firebase.FirebaseApplication('https://karmadb.firebaseIO.com', None)
 
+@app.route('/chat/<string:chat_id>')
+def chat(chat_id):
+    return render_template('chat.html', chat_id=chat_id)
+
+
 @app.route('/history')
 def history():
     return render_template('history.html')
 
-
-
 @app.route('/main')
 def main():
-    print('main', session)
     return render_template('main.html')
-
- #    if 'logged_in' in session:	
-	# 	print("in if")	
-	# 	if session['logged_in']:
-	# 		print("render template main")
-	# 		return render_template('main.html')
- #        else:
-	# 		return redirect(url_for('login'))
-            
-	# return redirect(url_for('login'))
 
 @app.route('/')
 def hello():

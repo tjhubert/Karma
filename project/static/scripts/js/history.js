@@ -145,6 +145,13 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
   
   componentWillMount: function() {
     this.bindAsArray(this.firebaseRef.child("users").child(this.state.user_uid).child('post').limitToLast(25), 'items');
+
+    this.firebaseRef.child("users").child(this.state.user_uid).child('post').on("child_changed", function(snapshot, key) {
+      var posts = snapshot.val(); //this.current_user.post
+      console.log('chat_session: ' + posts.chat_session)
+      window.open('/chat/' + String(posts.chat_session), '_blank')
+    })
+  
   },
 
   onChange: function(e) {

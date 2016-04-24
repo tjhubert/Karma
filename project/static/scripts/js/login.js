@@ -25,7 +25,8 @@ var LoginForm = React.createClass({displayName: "LoginForm",
   verifyIllinoisEmailAndRedirect: function(authData) {
     var that = this;
     if ( authData ){
-      if (authData.google.email && authData.google.email.match(/@(illinois|uiuc).edu\s*$/i)) {
+      if (authData.google.email){
+      // if (authData.google.email && authData.google.email.match(/@(illinois|uiuc).edu\s*$/i)) {
         console.log("Log In successful!");
         this.firebaseRef.child("users").child(authData.uid).once("value", function (dataSnapshot) {
           var currentUser = dataSnapshot.val();

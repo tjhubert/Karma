@@ -1,0 +1,97 @@
+<html>
+<head>
+  <script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js'></script>
+
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='bower_components/foundation-sites/dist/foundation.css') }}" type="text/css" /> -->
+
+  <!-- chat.css is by from firebase chat demo -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}" type="text/css" />
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+
+<!-- CHAT MARKUP -->
+<div class="example-chat l-demo-container">
+  <header>Firebase Chat</header>
+
+  <ul id='example-messages' class="example-chat-messages"></ul>
+
+  <footer>
+    <input type='text' id='messageInput'  placeholder='Type a message...'>
+  </footer>
+</div>
+
+<!-- CHAT JAVACRIPT -->
+<script>
+  // CREATE A REFERENCE TO FIREBASE
+  var firebaseURL = 'https://karmadb.firebaseio.com/chat/' + '{{chat_id}}'
+  var messagesRef = new Firebase(firebaseURL);
+  var author_uid;
+  var claimer_uid; 
+  var user_name; 
+  messagesRef.onAuth(function (authData) {
+    if (authData) {
+      var user_uid = authData.uid;
+      messagesRef.once("value", function(dataSnapshot) {
+
+        author_uid = dataSnapshot.child('author').val();
+        claimer_uid = dataSnapshot.child('claimer').val();
+
+        if (user_uid != author_uid && user_uid != claimer_uid){
+          window.location = '/main';
+        }
+      });
+      user_name = authData.google.displayName;
+
+    } 
+    else {
+      alert('User is not authorized. Please log in')
+      window.location = '/login';
+      console.log("Client unauthenticated.");
+    }
+  });
+
+  // REGISTER DOM ELEMENTS
+  var messageField = $('#messageInput');
+  var nameField = $('#nameInput');
+  var messageList = $('#example-messages');
+
+  // LISTEN FOR KEYPRESS EVENT
+  messageField.keypress(function (e) {
+    if (e.keyCode == 13) {
+      //FIELD VALUES
+      var username = user_name
+      var message = messageField.val();
+
+      //SAVE DATA TO FIREBASE AND EMPTY FIELD
+      messagesRef.child('messages').push({name:username, text:message});
+      messageField.val('');
+    }
+  });
+
+  // Add a callback that is triggered for each chat message.
+  messagesRef.child('messages').limitToLast(10).on('child_added', function (snapshot) {
+    //GET DATA
+    var data = snapshot.val();
+    var username = data.name || "anonymous";
+    var message = data.text;
+
+    //CREATE ELEMENTS MESSAGE & SANITIZE TEXT
+    var messageElement = $("<li>");
+    var nameElement = $("<strong class='example-chat-username'></strong>")
+    nameElement.text(username);
+    messageElement.text(message).prepend(nameElement);
+
+    //ADD MESSAGE
+    messageList.append(messageElement)
+
+    //SCROLL TO BOTTOM OF MESSAGE LIST
+    messageList[0].scrollTop = messageList[0].scrollHeight;
+  });
+  messagesRef.child('messages').push({name:'(admin)', text:user_name + ' joined the conversation.'});
+
+</script>
+</body>
+</html>

@@ -156,8 +156,8 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
         that.firebaseRef.child("users").child(user_uid).child('post').on("child_changed", function(snapshot, key) {
           var posts = snapshot.val(); //this.current_user.post
-          console.log(posts);
-          console.log(key);
+          console.log('chat_session: ' + posts.chat_session)
+          window.open('/chat/' + String(posts.chat_session), '_blank')
         })
 
         that.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
@@ -229,8 +229,25 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       email = dataSnapshot.child('author_email').val();
     })
 
-    this.firebaseRef.child('items').child(key).update({status: 'In Progress'});
-    this.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'In Progress'});
+    //initiate chat
+    var chat_id = this.firebaseRef.child('chat').push({
+      author: author_uid, 
+      claimer: this.state.user_uid,
+      messages: {}
+    });
+    chat_id = String(chat_id).split('/')[4];
+
+    this.firebaseRef.child('items').child(key).update({
+      status: 'In Progress',
+      chat_session: chat_id
+    });
+    this.firebaseRef.child('users').child(author_uid).child('post').child(key).update({
+      status: 'In Progress',
+      chat_session: chat_id});
+
+    
+    window.open('/chat/'+chat_id, '_blank')
+
   },
 
   finishItem: function(key) {
