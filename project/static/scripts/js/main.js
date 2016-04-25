@@ -29,19 +29,9 @@ var ActionComponent = React.createClass({displayName: "ActionComponent",
     var label;
     var func;
     if (status == "Unclaimed"){
-      text = "Claim"
+      text = "Give Help"
       func = this.props.claimItem
-      label = "button alert small";
-    }
-    else if (status == "Unclaimed"){
-      text = "Claim"
-      func = this.props.claimItem
-      label = "button alert small";
-    }
-    else if (status == "In Progress"){
-      text = "Finish"
-      func = this.props.finishItem
-      label = "button success small"
+      label = "button success ";
     }
     else{
       text = "Error"
@@ -457,7 +447,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             React.createElement("p", null, "Logged In as: ", React.createElement("strong", null,  this.state.initializingUserData ? 'Initializing data..' : this.state.user_email))
           ), 
           React.createElement("div", {className: "columns small-6 text-center"}, 
-            React.createElement("div", {className: "button success", onClick: this.openPostQuestionForm}, 
+            React.createElement("div", {className: "button default", onClick: this.openPostQuestionForm}, 
               React.createElement("i", {className: "fi-plus"}), " Post New Question"
             ), 
             React.createElement("p", null, "Post limit: ", React.createElement("strong", null,  this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.limit))

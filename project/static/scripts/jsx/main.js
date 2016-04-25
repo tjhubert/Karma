@@ -28,19 +28,9 @@ var ActionComponent = React.createClass({
     var label;
     var func;
     if (status == "Unclaimed"){
-      text = "Claim"
+      text = "Give Help"
       func = this.props.claimItem
-      label = "button alert small";
-    }
-    else if (status == "Unclaimed"){
-      text = "Claim"
-      func = this.props.claimItem
-      label = "button alert small";
-    }
-    else if (status == "In Progress"){
-      text = "Finish"
-      func = this.props.finishItem
-      label = "button success small"
+      label = "button success ";
     }
     else{
       text = "Error"
@@ -456,7 +446,7 @@ var ListQuestions = React.createClass({
             <p>Logged In as: <strong>{ this.state.initializingUserData ? 'Initializing data..' : this.state.user_email}</strong></p>
           </div>
           <div className="columns small-6 text-center">
-            <div className="button success" onClick={this.openPostQuestionForm}>
+            <div className="button default" onClick={this.openPostQuestionForm}>
               <i className="fi-plus"></i> Post New Question
             </div>
             <p>Post limit: <strong>{ this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.limit}</strong></p>
