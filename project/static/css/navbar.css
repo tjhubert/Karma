@@ -1,3 +1,9 @@
+h3 {
+  font-family: 'Karma', serif;
+  margin-bottom: 0;
+  margin-top: 0.5rem;
+}
+
 .menu li:not(:first-child) {
   border-left: 0.1rem solid grey;
 }
