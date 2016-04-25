@@ -193,6 +193,19 @@ var ListQuestions = React.createClass({
           disabledAutocomplete: false
         };
   },
+  
+  componentWillMount: function() {
+    this.bindAsArray(this.firebaseRef.child("users").child(this.state.user_uid).child('post').limitToLast(25), 'items');
+    this.bindAsObject(this.firebaseRef.child("users").child(this.state.user_uid), 'current_user');
+    this.setState({initializingUserData: false});
+
+    this.firebaseRef.child("users").child(this.state.user_uid).child('post').on("child_changed", function(snapshot, key) {
+      var posts = snapshot.val(); //this.current_user.post
+      console.log('chat_session: ' + posts.chat_session)
+      window.open('/chat/' + String(posts.chat_session), '_blank')
+    })
+  
+  },
 
   cancelItem: function(key) {
     var author_uid;
@@ -227,12 +240,6 @@ var ListQuestions = React.createClass({
         }
       })
     })
-  },
-  
-  componentWillMount: function() {
-    this.bindAsObject(this.firebaseRef.child("users").child(this.state.user_uid), 'current_user');
-    this.setState({initializingUserData: false});
-    this.bindAsArray(this.firebaseRef.child("users").child(this.state.user_uid).child('post').limitToLast(25), 'items');
   },
 
   componentDidMount: function() { 
