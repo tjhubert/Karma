@@ -51,12 +51,12 @@ var FilterButtons = React.createClass({displayName: "FilterButtons",
     }
     return (
       React.createElement("div", null, 
-        React.createElement("a", {className: "button " + disabledExpired, onClick: _this.props.clickExpired}, "Expired"), 
-        React.createElement("a", {className: "button " + disabledCanceled, onClick: _this.props.clickCanceled}, "Canceled"), 
-        React.createElement("a", {className: 'button ' + disabledU, onClick: _this.props.clickU}, "Unclaimed"), 
-        React.createElement("a", {className: "button " + disabledIP, onClick: _this.props.clickIP}, "In Progress"), 
-        React.createElement("a", {className: 'button ' + disabledF, onClick: _this.props.clickF}, "Finished"), 
-        React.createElement("a", {className: "button " + disabledA, onClick: _this.props.clickA}, "ALL")
+        React.createElement("a", {className: "button hollow" + disabledExpired, onClick: _this.props.clickExpired}, "Expired"), 
+        React.createElement("a", {className: "button hollow" + disabledCanceled, onClick: _this.props.clickCanceled}, "Canceled"), 
+        React.createElement("a", {className: 'button hollow' + disabledU, onClick: _this.props.clickU}, "Unclaimed"), 
+        React.createElement("a", {className: "button hollow" + disabledIP, onClick: _this.props.clickIP}, "In Progress"), 
+        React.createElement("a", {className: 'button hollow' + disabledF, onClick: _this.props.clickF}, "Finished"), 
+        React.createElement("a", {className: "button hollow" + disabledA, onClick: _this.props.clickA}, "ALL")
       )
     );
   }
@@ -462,7 +462,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             React.createElement("p", null, "Logged In as: ", React.createElement("strong", null,  this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.email))
           ), 
           React.createElement("div", {className: "columns small-6 text-center"}, 
-            React.createElement("div", {className: "button success", onClick: this.openPostQuestionForm}, 
+            React.createElement("div", {className: "button default", onClick: this.openPostQuestionForm}, 
               React.createElement("i", {className: "fi-plus"}), " Post New Question"
             ), 
             React.createElement("p", null, "Post limit: ", React.createElement("strong", null,  this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.limit))

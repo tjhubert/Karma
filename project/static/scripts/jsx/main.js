@@ -30,7 +30,7 @@ var ActionComponent = React.createClass({
     if (status == "Unclaimed"){
       text = "Give Help"
       func = this.props.claimItem
-      label = "button success ";
+      label = "button success small";
     }
     else{
       text = "Error"

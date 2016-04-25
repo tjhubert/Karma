@@ -50,12 +50,12 @@ var FilterButtons = React.createClass({
     }
     return (
       <div>
-        <a className={"button " + disabledExpired} onClick={_this.props.clickExpired}>Expired</a>
-        <a className={"button " + disabledCanceled} onClick={_this.props.clickCanceled}>Canceled</a>
-        <a className={'button ' + disabledU} onClick={_this.props.clickU}>Unclaimed</a>
-        <a className={"button " + disabledIP} onClick={_this.props.clickIP}>In Progress</a>
-        <a className={'button ' + disabledF} onClick={_this.props.clickF}>Finished</a>
-        <a className={"button " + disabledA} onClick={_this.props.clickA}>ALL</a>
+        <a className={"button hollow" + disabledExpired} onClick={_this.props.clickExpired}>Expired</a>
+        <a className={"button hollow" + disabledCanceled} onClick={_this.props.clickCanceled}>Canceled</a>
+        <a className={'button hollow' + disabledU} onClick={_this.props.clickU}>Unclaimed</a>
+        <a className={"button hollow" + disabledIP} onClick={_this.props.clickIP}>In Progress</a>
+        <a className={'button hollow' + disabledF} onClick={_this.props.clickF}>Finished</a>
+        <a className={"button hollow" + disabledA} onClick={_this.props.clickA}>ALL</a>
       </div>
     );
   }
@@ -461,7 +461,7 @@ var ListQuestions = React.createClass({
             <p>Logged In as: <strong>{ this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.email}</strong></p>
           </div>
           <div className="columns small-6 text-center">
-            <div className="button success" onClick={this.openPostQuestionForm}>
+            <div className="button default" onClick={this.openPostQuestionForm}>
               <i className="fi-plus"></i> Post New Question
             </div>
             <p>Post limit: <strong>{ this.state.initializingUserData ? 'Initializing data..' : this.state.current_user.limit}</strong></p>
