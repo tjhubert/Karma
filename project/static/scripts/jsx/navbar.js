@@ -5,13 +5,14 @@ var Logout = React.createClass({
   },
   render: function(props) {
     return (
-        <button onClick={this.logout} className="button alert">Logout</button>
+        <a onClick={this.logout}>Logout</a>
     );
   }
 });
 
 var NavBar = React.createClass({
   render: function(props) {
+    console.log();
     return (
       <div className="top-bar">
         <div className="top-bar-left">
@@ -19,8 +20,8 @@ var NavBar = React.createClass({
         </div>
         <div className="top-bar-right">
           <ul className="dropdown menu" data-dropdown-menu>
-            <li><a href="/main">Answer Questions</a></li>
-            <li><a href="/history">My Posts</a></li>
+            <li><a className = {window.location.pathname === "/main" ? 'menu-active' : ''} href="/main">Home</a></li>
+            <li><a className = {window.location.pathname === "/history" ? 'menu-active' : ''} href="/history">My Posts</a></li>
             <li><Logout/></li>
           </ul>
         </div>

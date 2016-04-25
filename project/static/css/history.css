@@ -78,7 +78,7 @@ tbody {
 
 
 tbody td, thead th {
-  width: 16.667%;
+  width: 14.28%;
   float: left;
 }
 
@@ -86,11 +86,11 @@ tbody td, thead th {
   width: 100%;
 }
 
-::-webkit-scrollbar {
+table ::-webkit-scrollbar {
     -webkit-appearance: none;
     width: 7px;
 }
-::-webkit-scrollbar-thumb {
+table ::-webkit-scrollbar-thumb {
     border-radius: 4px;
     background-color: rgba(0,0,0,.5);
     -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);

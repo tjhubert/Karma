@@ -1,0 +1,42 @@
+{
+  "name": "react-sortable-items",
+  "version": "0.0.12",
+  "description": "Sort stuff with React.js",
+  "main": "Sortable.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samvtran/react-sortable-items"
+  },
+  "keywords": [
+    "react"
+  ],
+  "author": "Sam Tran",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/samvtran/react-sortable-items/issues"
+  },
+  "homepage": "https://github.com/samvtran/react-sortable-items",
+  "devDependencies": {
+    "css-loader": "^0.9.1",
+    "del": "^1.1.1",
+    "extend": "^2.0.0",
+    "gulp": "^3.8.11",
+    "gulp-react": "^2.0.0",
+    "gulp-rename": "^1.2.0",
+    "gulp-webpack": "^1.2.0",
+    "immutable": "^3.6.2",
+    "jsx-loader": "^0.12.2",
+    "react": "^0.14.3",
+    "reflux": "^0.2.4",
+    "style-loader": "^0.8.3",
+    "webpack": "^1.5.3"
+  },
+  "dependencies": {
+    "classnames": "^1.1.4",
+    "react-addons-update": "^0.14.3",
+    "react-dom": "^0.14.3"
+  }
+}

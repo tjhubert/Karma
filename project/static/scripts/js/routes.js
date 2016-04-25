@@ -23388,29 +23388,24 @@ var ActionComponent = React.createClass({displayName: "ActionComponent",
 var QuestionPost = React.createClass({displayName: "QuestionPost",
   render: function() {
     var _this = this;
+    this.props.items = _.sortBy(this.props.items, 'posted_at');
 
-    function mapObject(object, callback) {
-        return Object.keys(object).map(function (key) {
-          return callback(object[key], key);
-        });
-    }
-
-    var createItem = function(item, key) {
+    var createItem = function(item, index) {
       if (item.status){
         return (
-          React.createElement("tr", {key:  key }, 
+          React.createElement("tr", {key:  index }, 
             React.createElement("td", null, item.address), 
             React.createElement("td", null, item.room), 
-            React.createElement("td", null, item.topic), 
+            React.createElement("td", null, item.course), 
             React.createElement("td", null, item.description), 
             React.createElement("td", null, 
-              React.createElement(ActionComponent, {status: item.status, claimItem:  _this.props.claimItem.bind(null, key), finishItem:  _this.props.finishItem.bind(null, key) })
+              React.createElement(ActionComponent, {status: item.status, claimItem:  _this.props.claimItem.bind(null, item.key), finishItem:  _this.props.finishItem.bind(null, item.key) })
             )
           )
         );
       }
     };
-    return React.createElement("tbody", null,  mapObject(this.props.items, createItem) );
+    return React.createElement("tbody", null,  this.props.items.map(createItem) );
   }
 });
 
@@ -23428,9 +23423,9 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       user_emaul: '',
       user_limit: '',
       current_user: '',
-      items:{},
+      items:[],
       address: '',
-      topic: '',
+      course: '',
       description: '',
       status: 'Unclaimed',
       geolocation: {},
@@ -23515,37 +23510,47 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       itemKey = itemKey.split(":")[1];
       that.firebaseRef.child("items").child(itemKey).on("value", function(dataSnapshot) {
         var question = dataSnapshot.val();
+        question.key = itemKey;
 
         if (question !== null){
-          var newItems = that.state.items;
+          
 
-          if (question.status === 'Unclaimed') {
-            newItems[itemKey] = question;
-            that.setState({items: newItems})
-          } else if (itemKey in newItems){
-            delete newItems[itemKey]
-            that.setState({items: newItems})
-          }
-
-          if (_.isEmpty(that.state.items)) {
+          //to prevent race condition
+          that.setState(function(currentState) {
+            var newItems = _.without(currentState.items, _.findWhere(currentState.items, {key: itemKey}));
+            if (question.status === 'Unclaimed') {
+              newItems.push(question);
+            }
+            currentState.items = newItems;
+            return currentState;
+          }, function() {
+            if (_.isEmpty(that.state.items)) {
             that.setState({tableStatus:"empty"});
-          } else {
-            that.setState({tableStatus:"success"});
-          }
+            } else {
+              that.setState({tableStatus:"success"});
+            }
+          });
 
         }
 
       })
     });
 
+
     this.geoQuery.on("key_exited", function(itemKey) {
       itemKey = itemKey.split(":")[1];
       that.firebaseRef.child("items").child(itemKey).off("value");
-      var newItems = that.state.items;
-      delete newItems[itemKey];
-      that.setState({items: newItems});
-      if (_.isEmpty(that.state.items)) {
-        that.setState({tableStatus:"empty"});
+
+      //to prevent race condition
+      if ( !!_.findWhere(that.state.items, {key: itemKey}) ) {
+        that.setState(function(currentState) {
+            currentState.items = _.without(currentState.items, _.findWhere(currentState.items, {key: itemKey}));
+            return currentState;
+        }, function() {
+            if (_.isEmpty(that.state.items)) {
+              that.setState({tableStatus:"empty"});
+            }
+        })
       }
     });
   },
@@ -23592,7 +23597,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     var that = this;
 
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function(position) {
+      navigator.geolocation.getCurrentPosition( function(position) {
         that.setState({
           geolocation:{
             lat: position.coords.latitude,
@@ -23607,7 +23612,17 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
           autocomplete.setBounds(circle.getBounds());
         });
         typeof callback === 'function' && callback();
+      }, function(error) {
+        console.log(error);
+        if (error.code === 1) {
+          alert("Please allow detect location or use the input box to fill your current location.");
+        } else {
+          alert("Please use the input box to fill your current location.");
+        }
       });
+    } else {
+      console.log("Browser does not support geolocation.");
+      alert("Please use the input box to fill your current location.");
     }
   },
 
@@ -23685,37 +23700,45 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     e.preventDefault();
     var that = this;
 
-    if (this.state.current_user.limit > 0 && this.state.address && this.state.address.trim().length !== 0) {
+    if (this.state.current_user.limit > 0) {
       this.firebaseRef.child("users").child(this.state.user_uid).child('limit').transaction(function(current_value){
         return (current_value || 0) - 1
       });
 
+      var dateNow = Date.now();
+
       var id = this.firebaseRef.child('items').push({
         address: this.state.address,
-        topic: this.state.topic,
+        course: this.state.course,
         status: 'Unclaimed',
         description: this.state.description,
         geolocation: this.state.geolocation,
         room: this.state.room,
         author_uid: this.state.user_uid,
         author_email: this.state.user_email,
-        author_limit: this.state.current_user.limit
+        author_limit: this.state.current_user.limit,
+        created_at: dateNow,
+        posted_at: dateNow
       });
 
-      this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
+      if (this.state.geolocation.lat && this.state.geolocation.lng) {
+        this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
+      }
 
       this.firebaseRef.child("users").child(this.state.user_uid).child('post').child(id.key()).set({
         address: this.state.address,
         room: this.state.room,
-        topic: this.state.topic,
+        course: this.state.course,
         status: 'Unclaimed',
-        description: this.state.description
+        description: this.state.description,
+        created_at: dateNow,
+        posted_at: dateNow
       });
 
       this.setState({
         address: '',
         room:'',
-        topic: '',
+        course: '',
         status: 'Unclaimed',
         description: ''
       });
@@ -23724,7 +23747,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       window.location = "/history";
     }
     else{
-        alert('Please wait for your questions to be answered.')
+      alert('Please wait while we initialize your data.')
     }
   },
 
@@ -23736,7 +23759,11 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     if (this.state.current_user.limit > 0) {
       this.questionForm.open();
     } else {
-      alert('Please wait for your questions to be answered.')
+      if (this.state.current_user) {
+        alert('Please wait for your questions to be answered.')
+      } else {
+        alert('Please wait while we initialize your data.')
+      }
     }
   },
 
@@ -23779,7 +23806,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
           React.createElement("thead", {className: "table-questions-head"}, 
             React.createElement("th", null, "Address"), 
             React.createElement("th", null, "Room"), 
-            React.createElement("th", null, "Topic"), 
+            React.createElement("th", null, "Course"), 
             React.createElement("th", null, "Description"), 
             React.createElement("th", null, "Action")
           ), 
@@ -23823,10 +23850,10 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
                 ), 
                 React.createElement("label", null, "Room/area", 
-                    React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "1234"})
+                    React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "SIEBL 1404"})
                 ), 
-                React.createElement("label", null, "Topic", 
-                    React.createElement("input", {type: "text", id: "topic", onChange:  this.onChange, value:  this.state.topic, name: "topic", placeholder: "Topic"})
+                React.createElement("label", null, "Course", 
+                    React.createElement("input", {type: "text", id: "course", onChange:  this.onChange, value:  this.state.course, name: "course", placeholder: "CS 225"})
                 ), 
                 React.createElement("label", null, "Description", 
                     React.createElement("input", {type: "text", id: "description", onChange:  this.onChange, value:  this.state.description, name: "description", placeholder: "Brief description"})

@@ -6,13 +6,14 @@ var Logout = React.createClass({displayName: "Logout",
   },
   render: function(props) {
     return (
-        React.createElement("button", {onClick: this.logout, className: "button alert"}, "Logout")
+        React.createElement("a", {onClick: this.logout}, "Logout")
     );
   }
 });
 
 var NavBar = React.createClass({displayName: "NavBar",
   render: function(props) {
+    console.log();
     return (
       React.createElement("div", {className: "top-bar"}, 
         React.createElement("div", {className: "top-bar-left"}, 
@@ -20,8 +21,8 @@ var NavBar = React.createClass({displayName: "NavBar",
         ), 
         React.createElement("div", {className: "top-bar-right"}, 
           React.createElement("ul", {className: "dropdown menu", "data-dropdown-menu": true}, 
-            React.createElement("li", null, React.createElement("a", {href: "/main"}, "Answer Questions")), 
-            React.createElement("li", null, React.createElement("a", {href: "/history"}, "My Posts")), 
+            React.createElement("li", null, React.createElement("a", {className: window.location.pathname === "/main" ? 'menu-active' : '', href: "/main"}, "Home")), 
+            React.createElement("li", null, React.createElement("a", {className: window.location.pathname === "/history" ? 'menu-active' : '', href: "/history"}, "My Posts")), 
             React.createElement("li", null, React.createElement(Logout, null))
           )
         )

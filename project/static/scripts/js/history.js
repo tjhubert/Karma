@@ -130,14 +130,19 @@ var ActionComponent = React.createClass({displayName: "ActionComponent",
 var QuestionPost = React.createClass({displayName: "QuestionPost",
   render: function(props) {
     var _this = this;
+
+    this.props.items = _.sortBy(this.props.items, 'created_at').reverse();
+
+
     var createItem = function(item, index) {
       if (item.status == _this.props.statusFilter || _this.props.statusFilter=='all'){
         return (
           React.createElement("tr", {key:  index }, 
             React.createElement("td", null, item.address), 
             React.createElement("td", null, item.room), 
-            React.createElement("td", null, item.topic), 
+            React.createElement("td", null, item.course), 
             React.createElement("td", null, item.description), 
+            React.createElement("td", null,  moment(item.posted_at).format("MM-DD-YYYY HH:mm") ), 
             React.createElement("td", null, React.createElement(StatusAlert, {status: item.status})), 
             React.createElement("td", null, 
               React.createElement(ActionComponent, {status: item.status, cancelItem:  _this.props.cancelItem.bind(null, item[".key"]), repostItem:  _this.props.repostItem.bind(null, item[".key"]) })
@@ -175,9 +180,9 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
     return { 
           user_uid: user_uid,
-          items:{},
+          items:[],
           location: '',
-          topic: '',
+          course: '',
           description: '',
           status: 'Unclaimed',
           status_filter: 'all',
@@ -185,7 +190,6 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
           current_user: '',
           address: '',
           geolocation: '',
-          topic: '',
           description: '',
           disabledAutocomplete: false
         };
@@ -213,8 +217,9 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       that.firebaseRef.child('users').child(author_uid).once("value", function(dataSnapshot) {
         curr_limit = dataSnapshot.child('limit').val();
         if (curr_limit > 0) {
-          that.firebaseRef.child('items').child(key).update({status: 'Unclaimed'});
-          that.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'Unclaimed'});
+          that.firebaseRef.child('items').child(key).update({status: 'Unclaimed', posted_at: Date.now()});
+          that.firebaseRef.child('users').child(author_uid)
+          .child('post').child(key).update({status: 'Unclaimed', posted_at: Date.now()});
           that.firebaseRef.child("users").child(author_uid).child('limit').transaction(function(current_value){
             return (current_value || 0) - 1
           });
@@ -272,39 +277,46 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     e.preventDefault();
     var that = this;
 
-    console.log(this.state.current_user);
     if (this.state.current_user.limit > 0) {
       this.firebaseRef.child("users").child(this.state.user_uid).child('limit').transaction(function(current_value){
         return (current_value || 0) - 1
       });
 
+      var dateNow = Date.now();
+
       var id = this.firebaseRef.child('items').push({
         address: this.state.address,
-        topic: this.state.topic,
+        course: this.state.course,
         status: 'Unclaimed',
         description: this.state.description,
         geolocation: this.state.geolocation,
         room: this.state.room,
         author_uid: this.state.user_uid,
         author_email: this.state.current_user.email,
-        author_limit: this.state.current_user.limit
+        author_limit: this.state.current_user.limit,
+        created_at: dateNow,
+        posted_at: dateNow
       });
 
 
-      this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
+      if (this.state.geolocation.lat && this.state.geolocation.lng) {
+        this.geoFire.set("items:" + id.key(), [this.state.geolocation.lat, this.state.geolocation.lng]);
+      }
 
       this.firebaseRef.child("users").child(this.state.user_uid).child('post').child(id.key()).set({
         address: this.state.address,
         room: this.state.room,
-        topic: this.state.topic,
+        course: this.state.course,
         status: 'Unclaimed',
-        description: this.state.description
+        description: this.state.description,
+        created_at: dateNow,
+        posted_at: dateNow
       });
 
       this.setState({
         address: '',
         room:'',
-        topic: '',
+        course: '',
         status: 'Unclaimed',
         description: ''
       });
@@ -463,8 +475,9 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             React.createElement("thead", {className: "table-questions-head"}, 
               React.createElement("th", null, "Address"), 
               React.createElement("th", null, "Room"), 
-              React.createElement("th", null, "Topic"), 
+              React.createElement("th", null, "Course"), 
               React.createElement("th", null, "Description"), 
+              React.createElement("th", null, "Posted at"), 
               React.createElement("th", null, "Status"), 
               React.createElement("th", null, "Action")
             ), 
@@ -496,10 +509,10 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
                   ), 
                   React.createElement("label", null, "Room/area", 
-                      React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "1234"})
+                      React.createElement("input", {type: "text", id: "room", onChange:  this.onChange, value:  this.state.room, name: "room", placeholder: "SIEBL 1404"})
                   ), 
-                  React.createElement("label", null, "Topic", 
-                      React.createElement("input", {type: "text", id: "topic", onChange:  this.onChange, value:  this.state.topic, name: "topic", placeholder: "Topic"})
+                  React.createElement("label", null, "course", 
+                      React.createElement("input", {type: "text", id: "course", onChange:  this.onChange, value:  this.state.course, name: "course", placeholder: "CS 225"})
                   ), 
                   React.createElement("label", null, "Description", 
                       React.createElement("input", {type: "text", id: "description", onChange:  this.onChange, value:  this.state.description, name: "description", placeholder: "Brief description"})

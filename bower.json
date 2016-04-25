@@ -20,7 +20,8 @@
     "foundation-sites": "^6.2.1",
     "reactfire": "^0.7.0",
     "firebase": "^2.4.2",
-    "geofire": "^4.0.0"
+    "geofire": "^4.0.0",
+    "moment": "^2.13.0"
   },
   "resolutions": {
     "jquery": "~2.1.3"
