@@ -1,0 +1,34 @@
+{
+  "name": "react-sortable-items",
+  "version": "0.0.12",
+  "homepage": "https://github.com/samvtran/react-sortable-items",
+  "authors": [
+    "Sam Tran <samvtran@gmail.com>"
+  ],
+  "description": "Sort stuff with React.js",
+  "main": "dist/Sortable.js",
+  "keywords": [
+    "react"
+  ],
+  "dependencies": {
+    "react": "~0.13.1"
+  },
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "0.0.12",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.0.12",
+    "commit": "148f9df8aa7b99a927d958ee347fa5a79c7daa22"
+  },
+  "_source": "https://github.com/samvtran/react-sortable-items.git",
+  "_target": "^0.0.12",
+  "_originalSource": "react-sortable-items",
+  "_direct": true
+}

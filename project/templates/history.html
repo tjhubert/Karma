@@ -2,15 +2,16 @@
 <html>
   <head lang="en">
     <meta charset="UTF-8">
-    <title>Flask React</title>
+    <title>Charma - give help, get help</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- styles -->
 
     <link rel="stylesheet" href="https://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.min.css" type="text/css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css" rel="stylesheet" type="text/css" />
+    <link href='https://fonts.googleapis.com/css?family=Karma:700' rel='stylesheet' type='text/css'>
 
-
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/history.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navbar.css') }}">
 
     <script src="https://fb.me/react-0.14.7.min.js"></script>
     <script src="https://fb.me/react-dom-0.14.7.min.js"></script>
@@ -23,15 +24,11 @@
 
   </head>
   <body>
-    <div id='logout' class="row text-center">
-      
+    <div id='navbar'>
     </div>
-    <div id='gotomain' class="row text-center">
-      <a href='/main' class='button warning'>Main</a>
-    </div>
+
     <div class="row text-center">
-      <h3 class="text-center">Welcome to Karma!</h3>
-      <div class="medium-8 medium-centered large-6 large-centered columns">
+      <div class="small-12 medium-10 medium-centered columns">
         
         <div id="main"></div>
       </div>
@@ -43,10 +40,12 @@
     <!-- <script src="{{ url_for('static', filename='bower_components/react/react.min.js') }}"></script> -->
     <!-- <script src="{{ url_for('static', filename='bower_components/jquery/dist/jquery.min.js') }}"></script> -->
     <!-- <script src="{{ url_for('static', filename='bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script> -->
-    <script src="{{ url_for('static', filename='scripts/js/history.js') }}"></script>
+    <script src="{{ url_for('static', filename='bower_components/underscore/underscore-min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bower_components/moment/moment.js') }}"></script>
     <script type='text/javascript'>
-      $()
-
+        $(document).foundation();
     </script>
+    <script src="{{ url_for('static', filename='scripts/js/navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/js/history.js') }}"></script>
   </body>
 </html>
