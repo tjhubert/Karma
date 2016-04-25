@@ -173,7 +173,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       radius: 0
     });
 
-    this.geolocate(this.updateCurrentLocation);
+    this.geolocate(this.updateCurrentLocation, this.setLocationError);
 
     this.geoQuery.on("key_entered", function(itemKey) {
       itemKey = itemKey.split(":")[1];
@@ -182,8 +182,6 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         question.key = itemKey;
 
         if (question !== null){
-          
-
           //to prevent race condition
           that.setState(function(currentState) {
             var newItems = _.without(currentState.items, _.findWhere(currentState.items, {key: itemKey}));
@@ -192,17 +190,15 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             }
             currentState.items = newItems;
             return currentState;
-          }, function() {
-            if (_.isEmpty(that.state.items)) {
-            that.setState({tableStatus:"empty"});
-            } else {
-              that.setState({tableStatus:"success"});
-            }
           });
-
+        }
+        if (that.state.items.length === 0) {
+          that.setState({tableStatus:"empty"});
+        } else {
+          that.setState({tableStatus:"success"});
         }
 
-      })
+      });
     });
 
 
@@ -216,7 +212,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
             currentState.items = _.without(currentState.items, _.findWhere(currentState.items, {key: itemKey}));
             return currentState;
         }, function() {
-            if (_.isEmpty(that.state.items)) {
+            if (that.state.items.length === 0) {
               that.setState({tableStatus:"empty"});
             }
         })
@@ -262,7 +258,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     });
   },
 
-  geolocate: function(callback) {
+  geolocate: function(successCallback, errorCallback) {
     var that = this;
 
     if (navigator.geolocation) {
@@ -280,7 +276,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         _.forEach(that.autocomplete, function (autocomplete) {
           autocomplete.setBounds(circle.getBounds());
         });
-        typeof callback === 'function' && callback();
+        typeof successCallback === 'function' && successCallback();
       }, function(error) {
         console.log(error);
         if (error.code === 1) {
@@ -288,20 +284,26 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
         } else {
           alert("Please use the input box to fill your current location.");
         }
+        typeof errorCallback === 'function' && errorCallback();
       });
     } else {
       console.log("Browser does not support geolocation.");
       alert("Please use the input box to fill your current location.");
+      typeof errorCallback === 'function' && errorCallback();
     }
+
+
   },
 
   updateCurrentLocation: function() {
     var that = this;
 
-    this.geoQuery.updateCriteria({
-      center: [this.state.geolocation.lat, this.state.geolocation.lng],
-      radius: 1
-    });
+    if (this.state.geolocation.lat) {
+      this.geoQuery.updateCriteria({
+        center: [this.state.geolocation.lat, this.state.geolocation.lng],
+        radius: 1
+      });
+    }
 
     // update current address using address from the field if available
     if (this.state.address) {
@@ -325,6 +327,14 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       
   },
 
+  setLocationError : function() {
+    this.setState({initializingUserLocation: false});
+    this.setState({disabledAutocomplete: false});
+    this.setState({current_address : "Failed to get your current location."});
+    this.setState({address : ""});
+    this.setState({tableStatus : "failed"});
+  },
+
   fillAddressFromGeolocate: function(e) {
     e.preventDefault()
     var that = this;
@@ -332,7 +342,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     this.setState({disabledAutocomplete: true});
     this.setState({address: "Finding your location..."});
 
-    var mainMethod = function() {
+    var successCallback = function() {
       var geocoder = new google.maps.Geocoder();
       var latLng = new google.maps.LatLng(that.state.geolocation.lat, that.state.geolocation.lng);
 
@@ -348,7 +358,7 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
     }
 
-    this.geolocate(mainMethod);
+    this.geolocate(successCallback, this.setLocationError);
     
   },
 
@@ -485,6 +495,8 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
                 return React.createElement("tbody", null, React.createElement("tr", null, React.createElement("td", {className: "full-td", colSpan: "5"}, React.createElement("h4", null, "Finding people around you who needs your help..."))));
               case "empty":
                 return React.createElement("tbody", null, React.createElement("tr", null, React.createElement("td", {className: "full-td", colSpan: "5"}, React.createElement("h4", null, "Nobody needs help right now around that area. Try again later or try another area."))));
+              case "failed":
+                return React.createElement("tbody", null, React.createElement("tr", null, React.createElement("td", {className: "full-td", colSpan: "5"}, React.createElement("h4", null, "Please use the input box to fill your current location."))));
               case "success": 
                 return React.createElement(QuestionPost, {items:  this.state.items, claimItem:  this.claimItem, finishItem:  this.finishItem});
               default:
