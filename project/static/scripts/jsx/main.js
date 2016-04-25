@@ -308,8 +308,7 @@ var ListQuestions = React.createClass({
     if (this.state.address) {
       this.setState({current_address: this.state.address});
       this.setState({address: ''});
-      this.setState({initializingUserLocation: false});
-    } else {
+    } else if (this.state.initializingUserLocation){
       var geocoder = new google.maps.Geocoder();
       var latLng = new google.maps.LatLng(this.state.geolocation.lat, this.state.geolocation.lng);
       geocoder.geocode( { 'location': latLng}, function(results, status) {
@@ -322,6 +321,8 @@ var ListQuestions = React.createClass({
         }
         that.setState({initializingUserLocation: false});
       });
+    } else {
+      alert("Please fill in the input box to update your location.");
     }
       
   },
