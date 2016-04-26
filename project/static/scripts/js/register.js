@@ -49,17 +49,18 @@ var RegisterForm = React.createClass({displayName: "RegisterForm",
   emailVerify:function(e){
     var re = /[^\s@]+@illinois\.edu$/
     email = e.target.value
-    // console.log(email)
-    if (!re.test(email)) {
-      e.target.className = "invalid"
-      this.setState({errorEmail:true})
-      // this.setState({error:true})
-    }
-    else{
-      e.target.className = ""
-      this.setState({errorEmail:false})
-      // this.setState({error:false})
-    }
+    this.setState({errorEmail:false})
+    // // console.log(email)
+    // if (!re.test(email)) {
+    //   e.target.className = "invalid"
+    //   this.setState({errorEmail:true})
+    //   // this.setState({error:true})
+    // }
+    // else{
+    //   e.target.className = ""
+    //   this.setState({errorEmail:false})
+    //   // this.setState({error:false})
+    // }
   },
   tryRegister: function(e) {
     e.preventDefault()
@@ -89,22 +90,23 @@ var RegisterForm = React.createClass({displayName: "RegisterForm",
               alert("Please send an email to admin with your email address you used to register.")
             } else {
               //Log new user in
-              ref.authWithPassword({
-                email    : that.refs.inputEmail.getDOMNode().value,
-                password : that.refs.inputPassword.getDOMNode().value
-              }, function(error, authData) {
-                if (error) {
-                  console.log("Login Failed!", error);
-                } else {
-                  window.location = '/main'
-                  console.log("Authenticated successfully with payload:", authData);
-                }
-              });
+              // ref.authWithPassword({
+              //   email    : that.refs.inputEmail.getDOMNode().value,
+              //   password : that.refs.inputPassword.getDOMNode().value
+              // }, function(error, authData) {
+              //   if (error) {
+              //     console.log("Login Failed!", error);
+              //   } else {
+              //     window.location = '/main'
+              //     console.log("Authenticated successfully with payload:", authData);
+              //   }
+              // });
+              that.verifyemail(userData.uid)
             }
           };
 
           //Push data to FB
-          ref.child('user').child(userData.uid).set({
+          ref.child('users').child(userData.uid).set({
             name: that.refs.inputFullName.getDOMNode().value,
             email: that.refs.inputEmail.getDOMNode().value,
             limit: 2,
@@ -114,14 +116,39 @@ var RegisterForm = React.createClass({displayName: "RegisterForm",
             }
           }, onComplete);
 
-
+          
         }
       });
     }
   },
+  verifyemail: function(user_uid){
+    console.log('verifying email' + user_uid)
+    fetch('/verifyemail', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        uid: user_uid,
+        test: 'key'
+      })
+    })
+    .then((response) => {
+      if (response.status === 200) {
+        console.log('verification email sent')
+        alert("Verification email sent.")
+        window.location = '/login'
+      } else {
+        this.setState({error:'invalid'});
+      }
+    })
+    .catch((error) => {
+      console.warn(error);
+    });
+  },
 
   render: function() {
-
     return (
       React.createElement("div", {className: "row"}, 
           React.createElement("div", {className: "medium-6 medium-centered large-4 large-centered columns"}, 

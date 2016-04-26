@@ -135,12 +135,10 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     var that = this;
 
     this.firebaseRef.onAuth(function (authData) {
-
       if (authData) {
         var user_uid = authData.uid;
         that.setState({user_uid: user_uid});
         that.bindAsObject(that.firebaseRef.child("users").child(user_uid), 'current_user');
-
         that.firebaseRef.child("users").child(user_uid).child('post').on("child_changed", function(snapshot, key) {
           var posts = snapshot.val(); //this.current_user.post
           console.log('chat_session: ' + posts.chat_session)

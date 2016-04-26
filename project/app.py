@@ -3,21 +3,26 @@ from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash, Response
 from firebase import firebase
 from werkzeug import generate_password_hash, check_password_hash
+from flask_mail import Mail, Message
+import rstr
+from flask.ext.cors import CORS
 
 
-# import redis
-# from flask import Flask
-# from flask_kvsession import KVSessionExtension
-# from simplekv.memory.redisstore import RedisStore
-
-# store = RedisStore(redis.StrictRedis())
-
-# app = Flask(__name__)
-# KVSessionExtension(store, app)
 
 app = Flask(__name__)
+app.config.update(
+    MAIL_SERVER = 'smtp.gmail.com',
+    MAIL_PORT=465,
+    MAIL_USE_SSL=True,
+    MAIL_USE_TLS=False,
+    MAIL_USERNAME= 'diowebdev@gmail.com',
+    MAIL_PASSWORD= 'Google12345678'
+    )
+
 app.secret_key = 'F12Zr47j\3yX R~X@H!jmM]Lwf/,?KT'
 firebase = firebase.FirebaseApplication('https://karmadb.firebaseIO.com', None)
+mail =  Mail(app)
+
 
 @app.route('/chat/<string:chat_id>')
 def chat(chat_id):
@@ -34,7 +39,6 @@ def main():
 
 @app.route('/')
 def hello():
-	session['logged_in'] = False
 	return redirect(url_for('login'))
     # return render_template('hello.html')
 
@@ -46,13 +50,47 @@ def logout():
 
 @app.route('/login')
 def login():
-    if('logged_in' in session):
-        if(session['logged_in'] == False):
-            return render_template('login.html');
-        else:
-            return redirect(url_for('main'));
     return render_template('login.html');
 
+@app.route('/verifyemail', methods=['GET', 'POST'])
+def sendVerifyEmail():
+    if request.method == 'POST':
+        request_body = request.get_json()
+        print(request_body)
+        user_uid = request_body['uid'] 
+        code_gen = rstr.letters(8)
+        code = '{}{}'.format(code_gen, user_uid)
+
+        post = {'verificationcode':code, 'verified': False}
+        url = 'users/{}'.format(user_uid)
+        document = firebase.patch(url, post)
+        document = firebase.get(url, None)
+        print(document)
+        email = document["email"]
+        msg = Message(
+                  'Hello',
+               sender='diowebdev@gmail.com',
+               recipients=[email])
+        verify_url = "http://localhost:5000/verify/{}".format(code)
+        msg.html = "<a href='{}'>Verify your email</a>".format(verify_url)
+        mail.send(msg)
+        js = json.dumps({'status':'OK'})
+        return Response(js, status=200, mimetype='application/json')
+
+@app.route('/verify/<string:code>')
+def verifyCode(code):
+    verif_code = code[:8]
+    user_uid = code[8:]
+    url = 'users/{}'.format(user_uid)
+    document = firebase.get(url, None)
+    email = document["email"]
+    firebaseCode = document["verificationcode"]
+    if (firebaseCode == code):
+        if (document['verified'] == True):
+            return redirect(url_for('login'))
+        else:
+            firebase.patch(url, {'verified':True, 'verificationcode': ''})
+    return '{} is verified. Please log in <a href="http://localhost:5000/">here</a>.'.format(email)
 
 @app.route('/checkAuth', methods=['GET', 'POST'])
 def check_auth():
