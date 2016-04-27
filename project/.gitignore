@@ -1,0 +1,9 @@
+*.DS_Store
+*.pyc
+.git
+
+venv
+
+node_modules/
+npm-debug.log
+.module-cache

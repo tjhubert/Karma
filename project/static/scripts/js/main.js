@@ -143,8 +143,9 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
 
         that.firebaseRef.child("users").child(user_uid).child('post').on("child_changed", function(snapshot, key) {
           var posts = snapshot.val(); //this.current_user.post
-          console.log('chat_session: ' + posts.chat_session)
-          window.open('/chat/' + String(posts.chat_session), '_blank')
+          console.log('status'  + posts.status)
+          if (posts.status == "In Progress")
+            window.open('/chat/' + String(posts.chat_session), '_blank')
         })
 
         that.firebaseRef.child("users").child(user_uid).once("value", function(dataSnapshot) {
@@ -231,7 +232,10 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
       author_uid = dataSnapshot.child('author_uid').val();
       email = dataSnapshot.child('author_email').val();
     })
-
+    if (author_uid == this.state.user_uid){
+      alert('You can not claim your own question.')
+      return;
+    }
     //initiate chat
     var chat_id = this.firebaseRef.child('chat').push({
       author: author_uid, 
@@ -262,10 +266,8 @@ var ListQuestions = React.createClass({displayName: "ListQuestions",
     this.firebaseRef.child('users').child(author_uid).once("value", function(dataSnapshot) {
       curr_limit = dataSnapshot.child('limit').val();
     })
-    // curr_limit += 1
     this.firebaseRef.child('items').child(key).update({status: 'Finished'});
     this.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'Finished'});
-    // firebaseRef.child('user').child(author_uid).update({limit: curr_limit});
     this.firebaseRef.child('users').child(author_uid).child('limit').transaction(function(current_value){
       return (current_value || 0) + 1
     });

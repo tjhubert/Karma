@@ -110,9 +110,9 @@ var ActionComponent = React.createClass({
       label = "button success small";
     }
     else if (status == "In Progress"){
-      text = "Cancel"
-      func = this.props.cancelItem
-      label = "button alert small"
+      text = "Finish"
+      func = this.props.finishItem
+      label = "button success small"
     }
     else{
       text = "Error"
@@ -144,7 +144,7 @@ var QuestionPost = React.createClass({
             <td>{ moment(item.posted_at).format("MM-DD-YYYY HH:mm") }</td>
             <td><StatusAlert status={item.status}/></td>
             <td>
-              <ActionComponent status={item.status} cancelItem={ _this.props.cancelItem.bind(null, item[".key"]) } repostItem = { _this.props.repostItem.bind(null, item[".key"]) } />
+              <ActionComponent status={item.status} finishItem={ _this.props.finishItem.bind(null, item[".key"]) } cancelItem={ _this.props.cancelItem.bind(null, item[".key"]) } repostItem = { _this.props.repostItem.bind(null, item[".key"]) } />
             </td>
           </tr>
         );
@@ -201,8 +201,8 @@ var ListQuestions = React.createClass({
 
     this.firebaseRef.child("users").child(this.state.user_uid).child('post').on("child_changed", function(snapshot, key) {
       var posts = snapshot.val(); //this.current_user.post
-      console.log('chat_session: ' + posts.chat_session)
-      window.open('/chat/' + String(posts.chat_session), '_blank')
+      if (posts.status == "In Progress")
+        window.open('/chat/' + String(posts.chat_session), '_blank')
     })
   
   },
@@ -240,6 +240,21 @@ var ListQuestions = React.createClass({
         }
       })
     })
+  },
+
+  finishItem: function(key) {
+    var author_uid;
+    var curr_limit;
+    var that = this;
+    this.firebaseRef.child('items').child(key).once("value", function(dataSnapshot) {
+      author_uid = dataSnapshot.val().author_uid
+      that.firebaseRef.child('items').child(key).update({status: 'Finished'});
+      that.firebaseRef.child('users').child(author_uid).child('post').child(key).update({status: 'Finished'});
+      that.firebaseRef.child('users').child(author_uid).child('limit').transaction(function(current_value){
+        return (current_value || 0) + 1
+      });
+    })
+    
   },
 
   componentDidMount: function() { 
@@ -339,9 +354,6 @@ var ListQuestions = React.createClass({
   },
 
   initAutocomplete: function() {
-    // Create the autocomplete object, restricting the search to geographical
-    // location types.
-
     var that = this;
     this.autocomplete = {};
 
@@ -487,7 +499,7 @@ var ListQuestions = React.createClass({
               <th>Status</th> 
               <th>Action</th> 
             </thead>
-            <QuestionPost items={ this.state.items } cancelItem={ this.cancelItem } repostItem={ this.repostItem } statusFilter={this.state.status_filter}/>    
+            <QuestionPost items={ this.state.items } finishItem={this.finishItem} cancelItem={ this.cancelItem } repostItem={ this.repostItem } statusFilter={this.state.status_filter}/>    
           </table>
 
         <div className="reveal small" id="post-question-form" data-reveal>
